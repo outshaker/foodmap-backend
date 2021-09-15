@@ -38,11 +38,11 @@ module.exports = (sequelize, DataTypes) => {
       validate: {
         notEmpty: true, 
       }
-    }
+    },
     is_published:{
       type: DataTypes.BOOLEAN,
       defaultValue: 1,
-    } 
+    },
     is_deleted: {
       type: DataTypes.BOOLEAN,
       defaultValue: 0,

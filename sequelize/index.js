@@ -40,7 +40,7 @@ app.post('/register', userController.register)
 app.post('/login', userController.login)
 app.get('/logout', userController.logout)
 app.get('/success', isLogin, (req, res) => {
-  res.send(`yes you have cookie. you name is ${req.session.user} and you id is ${req.session.useId}`)
+  res.send(`yes you have cookie. you name is ${req.session.user} and you id is ${req.session.userId}`)
 })
 
 app.listen(port, () => {
