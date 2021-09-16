@@ -1,8 +1,8 @@
 {
   "development": {
-    "username": "selena",
-    "password": "selena",
-    "database": "selena",
+    "username": "root",
+    "password": "root",
+    "database": "root",
     "host": "localhost",
     "dialect": "mysql"
   },
