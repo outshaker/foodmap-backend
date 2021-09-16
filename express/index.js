@@ -2,8 +2,8 @@ const express = require("express");
 const postController = require("./controllers/post.js");
 var bodyParser = require("body-parser");
 const multer = require("multer");
-const flash = require("connect-flash");
-const session = require("express-session");
+// const flash = require("connect-flash");
+// const session = require("express-session");
 
 const app = express();
 const port = process.env.PORT || 5001;
@@ -18,29 +18,29 @@ const upload = new multer({
   },
 });
 
-app.use(
-  session({
-    secret: "keyboard cat",
-    saveUninitialized: false,
-    resave: false,
-    expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
-  })
-);
+// app.use(
+//   session({
+//     secret: "keyboard cat",
+//     saveUninitialized: false,
+//     resave: false,
+//     expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+//   })
+// );
 
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-app.use((req, res, next) => {
-  res.locals.user = req.session.user || false;
-  res.locals.useId = req.session.useId || false;
-  next();
-});
-function isLogin(req, res, next) {
-  if (!req.session.user) {
-    res.send("you don't have cookie");
-    return;
-  }
-  next();
-}
+// app.use(bodyParser.urlencoded({ extended: false }));
+// app.use(bodyParser.json());
+// app.use((req, res, next) => {
+//   res.locals.user = req.session.user || false;
+//   res.locals.useId = req.session.useId || false;
+//   next();
+// });
+// function isLogin(req, res, next) {
+//   if (!req.session.user) {
+//     res.send("you don't have cookie");
+//     return;
+//   }
+//   next();
+// }
 
 app.get("/api/post/user/:user_id", postController.getUserPosts);
 app.get("/api/post/user/:user_id/:post_id", postController.getUserPost);
