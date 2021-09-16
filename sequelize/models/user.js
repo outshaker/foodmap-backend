@@ -14,13 +14,19 @@ module.exports = (sequelize, DataTypes) => {
     }
   };
   User.init({
-    nickname: DataTypes.STRING, 
+    nickname: {
+      type: DataTypes.STRING, 
+      validate: {
+        isNot: /[ !"#$%&'()*+,-.\/:;<=>?@[\]^`{|}~]/g,
+      }
+    },
     username: {
       type: DataTypes.STRING,
       allowNull: false,
       validate: {
         notNull: true,
         notEmpty: true, 
+        is:/^[\w!"#$%()*+,-\/;<=>?@[\]^`_{|}~]{4,32}$/g,
       }
     },
     password: {

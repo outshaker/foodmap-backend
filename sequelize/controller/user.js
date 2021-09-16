@@ -7,84 +7,91 @@ const User = db.User
 const userController = {
   login: async (req, res) => {
     const { username, password } = req.body
-    let user;
+    let user
     try {
       user = await User.findOne({
-          where: {
-            username,
-          }
-        })
-    } catch(err) {
-      res.send({
+        where: {
+          username,
+        },
+      })
+    } catch (err) {
+      res.json({
         ok: 0,
-        message: 'something goes wrong.'
+        message: 'something goes wrong.',
       })
       console.log(err)
       return
     }
-    if (!user) return res.send('wrong username or password')
+    if (!user) return res.json('wrong username or password')
     console.log(user.id)
     bcrypt.compare(password, user.password, function(err, result) {
-      if (err) return res.send({
-        ok: 0,
-        message: 'something goes wrong.'
-      })
+      if (err)
+        return res.json({
+          ok: 0,
+          message: 'something goes wrong.',
+        })
       if (result) {
         req.session.user = username
         req.session.userId = user.id
-        res.send({
-          ok:1,
-          message: 'Welcome'
+        res.json({
+          ok: 1,
+          message: 'Welcome',
         })
         return
       }
-      res.send({
+      res.json({
         ok: 0,
-        message: 'incorrect username or password'
+        message: 'incorrect username or password',
       })
     })
-       
   },
   logout: async (req, res) => {
-    await req.session.destroy((err) => {
-      if (err) return res.send('something goes wrong.')
+    await req.session.destroy(err => {
+      if (err) return res.json('something goes wrong.')
     })
-    res.send({
-      ok :1,
-      message:'session destroyed'
+    res.json({
+      ok: 1,
+      message: 'session destroyed',
     })
   },
   register: async (req, res) => {
     const { username, email, password, password2 } = req.body
     let result
     if (password !== password2) {
-      return res.send({
+      return res.json({
         ok: 0,
-        message: "密碼不相同，請確認後再次提交"
+        message: '密碼不相同，請確認後再次提交',
       })
     }
+    const re = /^[^ ]{6,64}$/
+    if (!re.test(password))
+      return res.json({
+        ok: 0,
+        message: 'password too short or contains blanks.',
+      })
     bcrypt.hash(password, saltRounds, async function(err, hash) {
-      if (err) return res.send('somethings goes wrong.')
+      if (err) return res.json('somethings goes wrong.')
       try {
         result = await User.create({
           username,
-          password:hash,
+          password: hash,
           email,
         })
-      } catch(err) {
-        return res.send({
+      } catch (err) {
+        res.json({
           ok: 0,
-          message: err
+          message: 'something goes wrong.',
         })
+        return console.log(err)
       }
       if (result) {
-        res.send({
+        res.json({
           ok: 1,
-          message: "success"
+          message: 'success',
         })
       }
     })
-  }
+  },
 }
 
 module.exports = userController
