@@ -1,6 +1,7 @@
 const express = require('express')
 const session = require('express-session')
-const userController = require('./controller/user.js')
+const userController = require('./controller/user')
+
 const app = express()
 const port = 5001
 
@@ -9,7 +10,7 @@ app.use(
     secret: 'keyboard cat',
     saveUninitialized: false,
     resave: false,
-    expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    expires: new Date(Date.now() + 24 * 60 * 60 * 1000)
   })
 )
 
