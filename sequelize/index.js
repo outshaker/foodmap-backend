@@ -1,10 +1,12 @@
 const express = require('express')
 const session = require('express-session')
 const userController = require('./controller/user')
+const bodyParser = require('body-parser')
 
 const app = express()
 const port = 5001
-
+app.use(bodyParser.json())
+app.use(bodyParser.urlencoded({ extended: false }))
 app.use(
   session({
     secret: 'keyboard cat',
