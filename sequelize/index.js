@@ -2,6 +2,7 @@ const express = require('express')
 const session = require('express-session')
 const userController = require('./controller/user')
 const bodyParser = require('body-parser')
+const cors = require('cors')
 
 const app = express()
 const port = 5001
@@ -15,7 +16,10 @@ app.use(
     expires: new Date(Date.now() + 24 * 60 * 60 * 1000)
   })
 )
-
+app.use(cors({
+  origin: 'localhost:3000',
+  credentials: 'include'
+}))
 app.use((req, res, next) => {
   res.locals.user = req.session.user || false
   res.locals.useId = req.session.useId || false
