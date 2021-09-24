@@ -18,7 +18,7 @@ app.use(
 )
 app.use(cors({
   origin: 'localhost:3000',
-  credentials: 'include'
+  credentials: 'true'
 }))
 app.use((req, res, next) => {
   res.locals.user = req.session.user || false
