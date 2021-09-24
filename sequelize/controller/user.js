@@ -87,6 +87,7 @@ const userController = {
           username,
           password: hash,
           email,
+          nickname: username,
         })
       } catch (err) {
         res.json({
