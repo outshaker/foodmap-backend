@@ -1,7 +1,8 @@
 const db = require("../models");
 const FormData = require("form-data");
 const fetch = require("node-fetch");
-const { imgurkey } = require("../../ignore");
+// const { imgurkey } = require("../../ignore") ;
+const imgurkey = null;
 const PostDb = db.Post; // model name
 const PictureDb = db.Picture; // model name
 const UserDb = db.User; // model name

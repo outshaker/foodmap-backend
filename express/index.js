@@ -1,6 +1,6 @@
 const express = require('express')
 const session = require('express-session')
-const userController = require('./controller/user')
+const userController = require('./controllers/user')
 const bodyParser = require('body-parser')
 const cors = require('cors')
 const postController = require("./controllers/post.js");
