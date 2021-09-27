@@ -14,6 +14,7 @@ module.exports = (sequelize, DataTypes) => {
     }
   };
   Picture.init({
+    post_id: DataTypes.INTEGER,
     restaurant_id: DataTypes.INTEGER,
     food_picture_url: DataTypes.STRING
   }, {

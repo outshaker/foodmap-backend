@@ -3,9 +3,11 @@ const session = require('express-session')
 const userController = require('./controller/user')
 const bodyParser = require('body-parser')
 const cors = require('cors')
+const postController = require("./controllers/post.js");
+const multer = require("multer");
 
 const app = express()
-const port = 5001
+const port = process.env.PORT || 5001;
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(
@@ -16,6 +18,13 @@ app.use(
     expires: new Date(Date.now() + 24 * 60 * 60 * 1000)
   })
 )
+const upload = new multer({
+  limits: {
+    fileSize: 1054576, // bytes, equal to 1 MB
+    files: 3,
+    parts: 8,
+  },
+});
 app.use(cors({
   origin: 'localhost:3000',
   credentials: 'true'
@@ -51,6 +60,20 @@ app.get('/success', isLogin, (req, res) => {
     }`
   )
 })
+app.get("/api/post/user/:user_id", postController.getUserPosts);
+app.get("/api/post/:post_id", postController.getUserPost);
+app.post("/api/post", upload.array("image"), postController.addPost);
+app.patch("/api/post/:post_id", upload.array("image"), postController.editPost);
+app.delete("/api/post/:post_id", postController.deletePost);
+
+app.get("/api/user-data/:user_id", postController.getUserData);
+app.post("/api/user-data/:user_id", postController.editUserData);
+app.get("/api/post/guest/:user_id", postController.getPosts)
+app.get(
+  "/api/post/guest/:user_id/:post_id",
+  upload.array("image"),
+  postController.getPost
+);
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`)
