@@ -1,9 +1,11 @@
 const db = require("../models");
 const FormData = require("form-data");
 const fetch = require("node-fetch");
-const { imgurkey } = require("../../ignore");
+// const { imgurkey } = require("../../ignore") ;
+const imgurkey = null;
 const PostDb = db.Post; // model name
 const PictureDb = db.Picture; // model name
+const UserDb = db.User; // model name
 
 module.exports = {
   getUserPosts: async (req, res) => {
@@ -351,6 +353,67 @@ module.exports = {
       images: imageArr,
     };
     return res.json(data);
+  },
+  getUserData: async (req, res) => {
+    // 取得使用者的個人資料
+    const userId = req.params.user_id;
+    let result = null;
+    try {
+      result = await UserDb.findOne({
+        where: { user_id: userId },
+        attributes: ['nickname', 'picture_url', 'background_pic_url'],
+      });
+    } catch (err) {
+      console.log(err);
+      console.log("errMessage", "發生錯誤");
+      return res.json({
+        getUserData: false,
+        reason: "取得資料失敗",
+      });
+    }
+    const data = {
+      data: result
+    };
+    return res.json(data);
+  },
+  editUserData: async (req, res) => {
+    const userId = req.params.user_id;
+    let result = null;
+    const imageCount = req.files.length;
+    const imageResult = await uploadImage(req);
+    console.log(imageResult);
+    if (!imageResult)
+      return res.json({
+        upload: false,
+        reason: "圖片上傳 Imgur 失敗",
+      });
+    const {
+      nickname
+    } = req.body;
+    let editResult = null;
+    try {
+      editResult = await UserDb.update(
+        {
+          nickname,
+          picture_url: imageResult[0],
+          background_pic_url: imageResult[1]
+        },
+        {
+          where: { id: userId },
+        }
+      );
+    } catch (err) {
+      console.log("errMessage", "PostDb.update 發生錯誤");
+      console.log(err);
+      return res.json({
+        upload: false,
+        reason: "編輯失敗",
+      });
+    }
+    console.log(editResult);
+    return res.json({
+      upload: true,
+    });
   },
 };
 

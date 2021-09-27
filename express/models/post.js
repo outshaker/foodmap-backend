@@ -11,15 +11,42 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       Post.belongsTo(models.User, {foreignKey:"user_id"})
+      Post.hasMany(models.Picture, { foreignKey:"id"})
     }
   };
   Post.init({
     user_id: DataTypes.INTEGER,
     restaurant_id: DataTypes.STRING,
-    title: DataTypes.STRING,
-    content: DataTypes.TEXT,
-    views: DataTypes.INTEGER,
-    is_deleted: DataTypes.BOOLEAN
+    title: {
+      type: DataTypes.STRING,
+      validate: {
+        notEmpty: true, 
+      }
+    },
+    content: {
+      type: DataTypes.TEXT,
+      validate: {
+        notEmpty: true, 
+      }
+    },
+    views: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+    },
+    visited_time: { 
+      type: DataTypes.DATE,
+      validate: {
+        notEmpty: true, 
+      }
+    },
+    is_published:{
+      type: DataTypes.BOOLEAN,
+      defaultValue: 1,
+    },
+    is_deleted: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: 0,
+    }
   }, {
     sequelize,
     modelName: 'Post',

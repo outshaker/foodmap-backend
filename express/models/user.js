@@ -1,7 +1,5 @@
-'use strict';
-const {
-  Model
-} = require('sequelize');
+'use strict'
+const { Model } = require('sequelize')
 module.exports = (sequelize, DataTypes) => {
   class User extends Model {
     /**
@@ -10,19 +8,55 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      User.hasMany(models.Post, { foreignKey : "id"})
+      User.hasMany(models.Post, { foreignKey: 'id' })
     }
-  };
-  User.init({
-    nickname: DataTypes.STRING,
-    password: DataTypes.STRING,
-    email: DataTypes.STRING,
-    user_level: DataTypes.INTEGER,
-    picture_url: DataTypes.STRING,
-    background_pic_url: DataTypes.STRING
-  }, {
-    sequelize,
-    modelName: 'User',
-  });
-  return User;
-};
+  }
+  User.init(
+    {
+      nickname: {
+        type: DataTypes.STRING,
+        validate: {
+          not: /[ !"#$%&'()*+,-.\/:;<=>?@[\]^`{|}~]/g,
+        },
+      },
+      username: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+          notNull: true,
+          notEmpty: true,
+          is: /^[\w!"#$%()*+,-\/;<=>?@[\]^`_{|}~]{4,32}$/g,
+        },
+      },
+      password: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+          notNull: true,
+          notEmpty: true,
+        },
+      },
+      email: {
+        type: DataTypes.STRING,
+        unique: true,
+        allowNull: false,
+        validate: {
+          notNull: true,
+          notEmpty: true,
+          isEmail: true,
+        },
+      },
+      user_level: {
+        type: DataTypes.INTEGER,
+        defaultValue: 1,
+      },
+      picture_url: DataTypes.STRING,
+      background_pic_url: DataTypes.STRING,
+    },
+    {
+      sequelize,
+      modelName: 'User',
+    }
+  )
+  return User
+}
