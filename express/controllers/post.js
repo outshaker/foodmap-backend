@@ -1,77 +1,81 @@
-const db = require("../models");
-const FormData = require("form-data");
-const fetch = require("node-fetch");
-// const { imgurkey } = require("../../ignore") ;
-const imgurkey = null;
-const PostDb = db.Post; // model name
-const PictureDb = db.Picture; // model name
-const UserDb = db.User; // model name
+const db = require('../models')
+const FormData = require('form-data')
+const fetch = require('node-fetch')
+const { imgurClientId } = require("../../ignore/key") ;
+
+const PostDb = db.Post
+const PictureDb = db.Picture
+
+const errMessage = {
+  ok: 0,
+  message: 'Fail to fetch.',
+}
+const okMessage = {
+  ok: 1,
+  message: 'Success.',
+}
+const queryAttributes = [
+  'id',
+  'title',
+  'content',
+  'visited_time',
+  'is_published',
+]
 
 module.exports = {
-  getUserPosts: async (req, res) => {
+  getPosts: async (req, res) => {
     // 取得單一使用者的複數食記
-    const userId = parseInt(req.params.user_id, 10);
-    const offset = parseInt(req.query.offset, 10);
-    const limit = parseInt(req.query.limit, 10);
-    const { order } = req.query; //views, createdAt
-    let result = null;
-    let imageResult = null;
-    let imageArr = [];
-    try {
-      result = await PostDb.findAndCountAll({
-        where: { user_id: userId },
-        order: [[order, "DESC"]],
-        offset,
-        limit,
-      });
-    } catch (err) {
-      console.log(err);
-      console.log("errMessage", "發生錯誤");
+    const checkedList = ['offset', 'limit']
+    if (!checkedList.every(key => Object.keys(req.query).includes(key))) {
       return res.json({
-        getPosts: false,
-        reason: "取得文章失敗",
-      });
+        ok: false,
+        message: 'Please input query parameter.',
+      })
     }
-    for (let i = 0; i < result.rows.length; i++) {
-      try {
-        imageResult = await PictureDb.findOne({
-          where: { post_id: result.rows[i].id },
-        });
-      } catch (err) {
-        console.log(err);
-        console.log("errMessage", "發生錯誤");
-        return res.json({
-          getPosts: false,
-          reason: "取得文章圖片失敗",
-        });
-      }
-      if (!imageResult) continue;
-      imageArr.push({
-        postId: imageResult.post_id,
-        link: imageResult.food_picture_url,
-      });
+    const queryData = {}
+    queryData.userId = parseInt(req.params.user_id, 10)
+    queryData.offset = parseInt(req.query.offset, 10)
+    queryData.limit = parseInt(req.query.limit, 10)
+    queryData.order = 'createdAt'
+    if (!req.session.user || req.session.userId !== req.params.user_id) {
+      let result = await getUnpublishedPosts(false, queryData)
+      if (!result) return res.json(errMessage)
+      return res.json(result)
     }
-
-    const data = {
-      count: result.count,
-      posts: result.rows.map((each) => each.dataValues),
-      images: imageArr,
-    };
-    return res.json(data);
+    let result = await getUnpublishedPosts(true, queryData)
+    if (!result) return res.json(errMessage)
+    return res.json(result)
+  },
+  getPost: async (req, res) => {
+    // 取得單一使用者的單一食記
+    const postId = parseInt(req.params.post_id, 10)
+    if (!req.session.user || req.session.userId !== req.params.user_id) {
+      let result = await getUnpublishedPost(false, postId)
+      if (!result) return res.json(errMessage)
+      return res.json(result)
+    }
+    let result = await getUnpublishedPost(true, postId)
+    if (!result) return res.json(errMessage)
+    return res.json(result)
   },
   addPost: async (req, res) => {
-    const imageCount = req.files.length;
-    console.log(req.body);
-    // const checkList = ['user_id', 'restaurant_id', 'title', 'content', 'visited_date', 'is_published']
-    // if (!checkList.every(key => Object.keys(req.body).includes(key))) {
-    //   res.end(req.body)
-    // }
-    const imageResult = await uploadImage(req);
-    if (!imageResult)
+    console.log(req.body)
+    if (req.session.userId !== req.params.user_id) {
       return res.json({
-        upload: false,
-        reason: "圖片上傳 Imgur 失敗",
-      });
+        ok: 0,
+        message: 'Unauthorized.'
+      })
+    }
+    const checkedList = ['user_id', 'restaurant_id', 'title', 'content', 'visited_date', 'is_published']
+    if (!checkedList.every(key => Object.keys(req.body).includes(key))) {
+    return res.json({
+      ok: false,
+      message: 'Please input query parameter.',
+    })
+    }
+    const imageCount = req.files.length
+    const imageResult = await uploadImage(req)
+    if (!imageResult) return res.json(errMessage)
     const {
       user_id,
       restaurant_id,
@@ -79,8 +83,8 @@ module.exports = {
       content,
       visited_time,
       is_published,
-    } = req.body;
-    let postResult = null;
+    } = req.body
+    let postResult = null
     try {
       postResult = await PostDb.create({
         user_id,
@@ -89,14 +93,10 @@ module.exports = {
         content,
         visited_time,
         is_published,
-      });
+      })
     } catch (err) {
-      console.log("errMessage", "PostDb.create 發生錯誤");
-      console.log(err);
-      return res.json({
-        upload: false,
-        reason: "文章上傳失敗",
-      });
+      console.log(err)
+      return res.json(errMessage)
     }
     try {
       for (let i = 0; i < imageCount; i++) {
@@ -104,78 +104,34 @@ module.exports = {
           post_id: postResult.id,
           restaurant_id,
           food_picture_url: imageResult[i],
-        });
+        })
       }
     } catch (err) {
-      console.log("errMessage", "PictureDb.create 發生錯誤");
-      console.log(err);
-      return res.json({
-        upload: false,
-        reason: "圖片上傳失敗",
-      });
+      console.log(err)
+      return res.json(errMessage)
     }
-    return res.json({
-      upload: true,
-    });
-  },
-  getUserPost: async (req, res) => {
-    // 取得單一使用者的單一食記
-    console.log("取得單一使用者的單一食記");
-    console.log(req.params);
-    console.log(req.query);
-    const postId = parseInt(req.params.post_id, 10);
-    let result = null;
-    let imageResult = null;
-    let imageArr = [];
-    try {
-      result = await PostDb.findOne({
-        where: { id: postId },
-      });
-    } catch (err) {
-      console.log(err);
-      console.log("errMessage", "發生錯誤");
-      return res.json({
-        getPost: false,
-        reason: "取得文章失敗",
-      });
-    }
-    try {
-      imageResult = await PictureDb.findAndCountAll({
-        where: { post_id: result.id },
-      });
-    } catch (err) {
-      console.log(err);
-      console.log("errMessage", "發生錯誤");
-      return res.json({
-        getPost: false,
-        reason: "取得文章圖片失敗",
-      });
-    }
-    imageResult.rows.forEach((each) => imageArr.push(each.food_picture_url));
-    const data = {
-      post: result,
-      images: imageArr,
-    };
-    return res.json(data);
+    return res.json(okMessage)
   },
   editPost: async (req, res) => {
-    const imageCount = req.files.length;
-    const postId = parseInt(req.params.post_id, 10);
-    const imageResult = await uploadImage(req);
-    console.log(imageResult);
-    if (!imageResult)
+    if (req.session.userId !== req.params.user_id) {
       return res.json({
-        upload: false,
-        reason: "圖片上傳 Imgur 失敗",
-      });
+        ok: 0,
+        message: 'Unauthorized.'
+      })
+    }
+    const imageCount = req.files.length
+    const postId = parseInt(req.params.post_id, 10)
+    const imageResult = await uploadImage(req)
+    console.log(imageResult)
+    if (!imageResult) return res.json(errMessage)
     const {
       restaurant_id,
       title,
       content,
       visited_time,
       is_published,
-    } = req.body;
-    let editResult = null;
+    } = req.body
+    let editResult = null
     try {
       editResult = await PostDb.update(
         {
@@ -188,29 +144,21 @@ module.exports = {
         {
           where: { id: postId },
         }
-      );
+      )
     } catch (err) {
-      console.log("errMessage", "PostDb.update 發生錯誤");
-      console.log(err);
-      return res.json({
-        upload: false,
-        reason: "文章編輯失敗",
-      });
+      console.log(err)
+      return res.json(errMessage)
     }
-    console.log(editResult);
+    console.log(editResult)
     try {
       await PictureDb.destroy({
         where: {
           post_id: postId,
         },
-      });
+      })
     } catch (err) {
-      console.log("errMessage", "PictureDb.destroy 發生錯誤");
-      console.log(err);
-      return res.json({
-        upload: false,
-        reason: "文章圖片編輯失敗",
-      });
+      console.log(err)
+      return res.json(errMessage)
     }
     try {
       for (let i = 0; i < imageCount; i++) {
@@ -218,23 +166,23 @@ module.exports = {
           post_id: postId,
           restaurant_id,
           food_picture_url: imageResult[i],
-        });
+        })
       }
     } catch (err) {
-      console.log("errMessage", "PictureDb.create 發生錯誤");
-      console.log(err);
-      return res.json({
-        upload: false,
-        reason: "圖片上傳失敗",
-      });
+      console.log(err)
+      return res.json(errMessage)
     }
-    return res.json({
-      upload: true,
-    });
+    return res.json(okMessage)
   },
   deletePost: async (req, res) => {
-    const postId = parseInt(req.params.post_id, 10);
-    let result = null;
+    if (req.session.userId !== req.params.user_id) {
+      return res.json({
+        ok: 0,
+        message: 'Unauthorized.'
+      })
+    }
+    const postId = parseInt(req.params.post_id, 10)
+    let result = null
     try {
       result = await PostDb.update(
         {
@@ -243,202 +191,119 @@ module.exports = {
         {
           where: { id: postId },
         }
-      );
+      )
     } catch (err) {
-      console.log(err);
-      console.log("errMessage", "發生錯誤");
-      return res.json({
-        delete: false,
-        reason: "刪除文章失敗",
-      });
+      console.log(err)
+      return res.json(errMessage)
     }
     console.log(result)
-    res.json({
-      delete: true,
-    });
+    return res.json(okMessage)
   },
-  getPosts: async (req, res) => {
-    // 取得單一使用者的複數食記
-    const userId = parseInt(req.params.user_id, 10);
-    const offset = parseInt(req.query.offset, 10);
-    const limit = parseInt(req.query.limit, 10);
-    const { order } = req.query; //views, createdAt
-    let result = null;
-    let imageResult = null;
-    let imageArr = [];
-    try {
-      result = await PostDb.findAndCountAll({
-        where: {
-          user_id: userId,
-          is_deleted: false,
-        },
-        order: [[order, "DESC"]],
-        offset,
-        limit,
-      });
-    } catch (err) {
-      console.log(err);
-      console.log("errMessage", "發生錯誤");
-      return res.json({
-        getPosts: false,
-        reason: "取得文章失敗",
-      });
-    }
-    for (let i = 0; i < result.rows.length; i++) {
-      try {
-        imageResult = await PictureDb.findOne({
-          where: { post_id: result.rows[i].id },
-        });
-      } catch (err) {
-        console.log(err);
-        console.log("errMessage", "發生錯誤");
-        return res.json({
-          getPosts: false,
-          reason: "取得文章圖片失敗",
-        });
-      }
-      if (!imageResult) continue;
-      imageArr.push({
-        postId: imageResult.post_id,
-        link: imageResult.food_picture_url,
-      });
-    }
-
-    const data = {
-      count: result.count,
-      posts: result.rows.map((each) => each.dataValues),
-      images: imageArr,
-    };
-    return res.json(data);
-  },
-  getPost: async (req, res) => {
-    // 取得單一使用者的單一食記
-    console.log("取得單一使用者的單一食記");
-    console.log(req.params);
-    console.log(req.query);
-    const postId = parseInt(req.params.post_id, 10);
-    let result = null;
-    let imageResult = null;
-    let imageArr = [];
-    try {
-      result = await PostDb.findOne({
-        where: {
-          id: postId,
-          is_deleted: false,
-        },
-      });
-    } catch (err) {
-      console.log(err);
-      console.log("errMessage", "發生錯誤");
-      return res.json({
-        getPost: false,
-        reason: "取得文章失敗",
-      });
-    }
-    try {
-      imageResult = await PictureDb.findAndCountAll({
-        where: { post_id: result.id },
-      });
-    } catch (err) {
-      console.log(err);
-      console.log("errMessage", "發生錯誤");
-      return res.json({
-        getPost: false,
-        reason: "取得文章圖片失敗",
-      });
-    }
-    imageResult.rows.forEach((each) => imageArr.push(each.food_picture_url));
-    const data = {
-      post: result,
-      images: imageArr,
-    };
-    return res.json(data);
-  },
-  getUserData: async (req, res) => {
-    // 取得使用者的個人資料
-    const userId = req.params.user_id;
-    let result = null;
-    try {
-      result = await UserDb.findOne({
-        where: { user_id: userId },
-        attributes: ['nickname', 'picture_url', 'background_pic_url'],
-      });
-    } catch (err) {
-      console.log(err);
-      console.log("errMessage", "發生錯誤");
-      return res.json({
-        getUserData: false,
-        reason: "取得資料失敗",
-      });
-    }
-    const data = {
-      data: result
-    };
-    return res.json(data);
-  },
-  editUserData: async (req, res) => {
-    const userId = req.params.user_id;
-    let result = null;
-    const imageCount = req.files.length;
-    const imageResult = await uploadImage(req);
-    console.log(imageResult);
-    if (!imageResult)
-      return res.json({
-        upload: false,
-        reason: "圖片上傳 Imgur 失敗",
-      });
-    const {
-      nickname
-    } = req.body;
-    let editResult = null;
-    try {
-      editResult = await UserDb.update(
-        {
-          nickname,
-          picture_url: imageResult[0],
-          background_pic_url: imageResult[1]
-        },
-        {
-          where: { id: userId },
-        }
-      );
-    } catch (err) {
-      console.log("errMessage", "PostDb.update 發生錯誤");
-      console.log(err);
-      return res.json({
-        upload: false,
-        reason: "編輯失敗",
-      });
-    }
-    console.log(editResult);
-    return res.json({
-      upload: true,
-    });
-  },
-};
+}
 
 async function uploadImage(req) {
-  console.log(req.files);
+  console.log(req.files)
 
-  const imgurResultArr = [];
+  const imgurResultArr = []
   for (let i = 0; i < req.files.length; i++) {
-    const myHeaders = new fetch.Headers();
-    myHeaders.append("Authorization", `Client-ID ${imgurkey}`);
-    const formData = new FormData();
-    formData.append("image", req.files[i].buffer);
+    const myHeaders = new fetch.Headers()
+    myHeaders.append('Authorization', `Client-ID ${imgurClientId}`)
+    const formData = new FormData()
+    formData.append('image', req.files[i].buffer)
     const requestOptions = {
-      method: "POST",
+      method: 'POST',
       headers: myHeaders,
       body: formData,
-      redirect: "follow",
-    };
+      redirect: 'follow',
+    }
     const promiseResult = await fetch(
-      "https://api.imgur.com/3/image",
+      'https://api.imgur.com/3/image',
       requestOptions
-    );
-    const result = await promiseResult.json();
-    if (!result.success) return false;
-    imgurResultArr.push(result.data.link);
+    )
+    const result = await promiseResult.json()
+    if (!result.success) return false
+    imgurResultArr.push(result.data.link)
   }
-  return imgurResultArr;
+  return imgurResultArr
+}
+
+async function getUnpublishedPosts(unpublished = false, queryData) {
+  const { userId, offset, limit, order } = queryData
+  let where = { user_id: userId, is_deleted: false, is_published: true }
+  if (unpublished) {
+    where = { user_id: userId, is_deleted: false }
+  }
+  let result = null
+  let imageResult = null
+  let imageArr = []
+  try {
+    result = await PostDb.findAndCountAll({
+      where,
+      attributes: queryAttributes,
+      order: [[order, 'DESC']],
+      offset,
+      limit,
+    })
+    console.log(result)
+  } catch (err) {
+    return false
+  }
+  if (!result) return {}
+  for (let i = 0; i < result.rows.length; i++) {
+    try {
+      imageResult = await PictureDb.findOne({
+        where: { post_id: result.rows[i].id },
+      })
+      console.log(imageResult)
+    } catch (err) {
+      console.log(err)
+      return false
+    }
+    if (!imageResult) continue
+    imageArr.push({
+      postId: imageResult.post_id,
+      link: imageResult.food_picture_url,
+    })
+  }
+  const data = {
+    postCounts: result.count,
+    posts: result.rows.map(each => each.dataValues),
+    images: imageArr,
+  }
+  console.log(data)
+  return data
+}
+
+async function getUnpublishedPost(unpublished = false, postId) {
+  let where = { id: postId, is_deleted: false, is_published: true }
+  if (unpublished) {
+    where = { id: postId, is_deleted: false }
+  }
+  let result = null
+  let imageResult = null
+  let imageArr = []
+  try {
+    result = await PostDb.findOne({
+      where,
+      attributes: queryAttributes,
+    })
+  } catch (err) {
+    console.log(err)
+    return false
+  }
+  if (!result) return {}
+  try {
+    imageResult = await PictureDb.findAndCountAll({
+      where: { post_id: result.id },
+    })
+  } catch (err) {
+    console.log(err)
+    return false
+  }
+  imageResult.rows.forEach(each => imageArr.push(each.food_picture_url))
+  const data = {
+    post: result,
+    images: imageArr,
+  }
+  return data
 }
