@@ -53,6 +53,11 @@ app.get('/cookie', (req, res) => {
 app.post('/register', userController.register)
 app.post('/login', userController.login)
 app.get('/logout', userController.logout)
+app.get("/api/user/:user_id", userController.getUserData);
+app.post("/api/user/:user_id", isLogin, upload.fields([
+  { name: 'avatar', maxCount: 1 },
+  { name: 'background', maxCount: 1 }
+]), userController.editUserData);
 app.get('/success', isLogin, (req, res) => {
   res.json(
     `yes you have cookie. you name is ${req.session.user} and you id is ${
@@ -60,20 +65,11 @@ app.get('/success', isLogin, (req, res) => {
     }`
   )
 })
-app.get("/api/post/user/:user_id", postController.getUserPosts);
-app.get("/api/post/:post_id", postController.getUserPost);
-app.post("/api/post", upload.array("image"), postController.addPost);
-app.patch("/api/post/:post_id", upload.array("image"), postController.editPost);
-app.delete("/api/post/:post_id", postController.deletePost);
-
-app.get("/api/user-data/:user_id", postController.getUserData);
-app.post("/api/user-data/:user_id", postController.editUserData);
-app.get("/api/post/guest/:user_id", postController.getPosts)
-app.get(
-  "/api/post/guest/:user_id/:post_id",
-  upload.array("image"),
-  postController.getPost
-);
+app.get("/api/post/user/:user_id", postController.getPosts);
+app.get("/api/post/:post_id", postController.getPost);
+app.post("/api/post", isLogin, upload.array("image"), postController.addPost);
+app.patch("/api/post/:post_id", isLogin, upload.array("image"), postController.editPost);
+app.delete("/api/post/:post_id", isLogin, postController.deletePost);
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`)
