@@ -1,3 +1,4 @@
+const errorMessage = require('../errorMessage.js')
 const db = require('../models')
 const bcrypt = require('bcrypt')
 const saltRounds = 11
@@ -15,24 +16,13 @@ const userController = {
         },
       })
     } catch (err) {
-      res.json({
-        ok: 0,
-        message: 'something goes wrong.',
-      })
+      res.json(errorMessage.userNotFound)
       console.log(err)
       return
     }
-    if (!user)
-      return res.json({
-        ok: 0,
-        message: 'wrong username or password',
-      })
+    if (!user) return res.json(res.json(errorMessage.userNotFound))
     bcrypt.compare(password, user.password, function(err, result) {
-      if (err)
-        return res.json({
-          ok: 0,
-          message: 'something goes wrong.',
-        })
+      if (err) return res.json(res.json(errorMessage.userNotFound))
       if (result) {
         req.session.user = username
         req.session.userId = user.id
@@ -42,10 +32,7 @@ const userController = {
         })
         return
       }
-      res.json({
-        ok: 0,
-        message: 'incorrect username or password',
-      })
+      res.json(res.json(errorMessage.userNotFound))
     })
   },
   logout: async (req, res) => {
@@ -53,7 +40,7 @@ const userController = {
       if (err)
         return res.json({
           ok: 0,
-          message: 'something goes wrong.',
+          message: 'please try again.',
         })
     })
     res.json({
