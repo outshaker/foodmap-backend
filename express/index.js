@@ -27,8 +27,8 @@ const upload = new multer({
 })
 app.use(
   cors({
-    origin: 'localhost:3000',
-    credentials: 'true',
+    origin: 'http://localhost:3000',
+    credentials: true,
   })
 )
 app.use((req, res, next) => {
