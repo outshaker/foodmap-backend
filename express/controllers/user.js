@@ -28,7 +28,7 @@ const userController = {
         req.session.userId = user.id
         res.json({
           ok: 1,
-          message: 'Welcome',
+          message: 'success',
         })
         return
       }
@@ -37,11 +37,7 @@ const userController = {
   },
   logout: async (req, res) => {
     await req.session.destroy(err => {
-      if (err)
-        return res.json({
-          ok: 0,
-          message: 'please try again.',
-        })
+      if (err) return res.json(errorMessage.general)
     })
     res.json({
       ok: 1,
@@ -52,19 +48,14 @@ const userController = {
     const { username, email, password, checkedPassword } = req.body
     let result
     if (password !== checkedPassword) {
-      return res.json({
-        ok: 0,
-        message: 'please check your password is correct and submit again',
-      })
+      return res.json(errorMessage.passwordNotSame)
     }
-    const re = /^[^ ]{6,64}$/
-    if (!re.test(password))
-      return res.json({
-        ok: 0,
-        message: 'password too short or contains blanks.',
-      })
+    const usernameRe = /^[\w!"#$%()*+,-\/;<=>?@[\]^`_{|}~]{4,32}$/g
+    if (!usernameRe.test(username)) return res.json(errorMessage.usernameError)
+    const passwordRe = /^[^ ]{6,64}$/g
+    if (!passwordRe.test(password)) return res.json(errorMessage.passwordError)
     bcrypt.hash(password, saltRounds, async function(err, hash) {
-      if (err) return res.json(errorMessage.dataBaseErr)
+      if (err) return res.json(errorMessage.general)
       try {
         result = await User.create({
           username,
