@@ -54,7 +54,7 @@ const userController = {
     if (password !== checkedPassword) {
       return res.json({
         ok: 0,
-        message: '密碼不相同，請確認後再次提交',
+        message: 'please check your password is correct and submit again',
       })
     }
     const re = /^[^ ]{6,64}$/
@@ -64,11 +64,7 @@ const userController = {
         message: 'password too short or contains blanks.',
       })
     bcrypt.hash(password, saltRounds, async function(err, hash) {
-      if (err)
-        return res.json({
-          ok: 0,
-          message: 'somethings goes wrong.',
-        })
+      if (err) return res.json(errorMessage.dataBaseErr)
       try {
         result = await User.create({
           username,
@@ -77,10 +73,7 @@ const userController = {
           nickname: username,
         })
       } catch (err) {
-        res.json({
-          ok: 0,
-          message: 'something goes wrong.',
-        })
+        res.json(errorMessage.duplicateUsernameOrEmail)
         return console.log(err)
       }
       if (result) {

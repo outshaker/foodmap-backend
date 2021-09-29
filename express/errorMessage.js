@@ -1,5 +1,5 @@
 module.exports = {
-  errorMessage : {
+  errorMessage: {
     userNotFound: {
       ok: 0,
       message: 'invalid username or password',
@@ -12,5 +12,13 @@ module.exports = {
       ok: 0,
       message: "Sorry, you don't have permission to visit this site",
     },
-  }
+    dataBaseErr: {
+      ok: 0,
+      message: 'please try again',
+    },
+    duplicateUsernameOrEmail: {
+      ok: 0,
+      message: 'duplicate username or email',
+    },
+  },
 }
