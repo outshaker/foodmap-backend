@@ -2,7 +2,8 @@ const errorMessage = require('../errorMessage.js')
 const db = require('../models')
 const FormData = require('form-data')
 const fetch = require('node-fetch')
-const { imgurClientId } = require('../../ignore/key')
+// const { imgurClientId } = require('../../ignore/key')
+const imgurClientId = process.env['IMGUR_TOKEN']
 const bcrypt = require('bcrypt')
 const { error } = require('console')
 const saltRounds = 11
@@ -32,7 +33,7 @@ const userController = {
         req.session.userId = user.id
         res.json({
           ok: 1,
-          message: 'success',
+          message: 'success.',
         })
         return
       }
@@ -45,7 +46,7 @@ const userController = {
     })
     res.json({
       ok: 1,
-      message: 'session destroyed',
+      message: 'session destroyed.',
     })
   },
   register: async (req, res) => {
@@ -182,12 +183,11 @@ const userController = {
       })
     } catch (err) {
       console.log(err)
-      return res.json({
-        ok: 0,
-        message: 'Fail to get data.',
-      })
+      return res.json(errorMessage.userIdNotFound)
     }
     const data = {
+      ok: 1,
+      message: 'success',
       data: result,
     }
     return res.json(data)

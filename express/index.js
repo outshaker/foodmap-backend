@@ -1,3 +1,6 @@
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config()
+}
 const express = require('express')
 const session = require('express-session')
 const userController = require('./controllers/user')
@@ -5,9 +8,9 @@ const bodyParser = require('body-parser')
 const cors = require('cors')
 const postController = require('./controllers/post.js')
 const multer = require('multer')
-
 const app = express()
 const port = process.env.PORT || 5001
+
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(

@@ -1,7 +1,8 @@
 const db = require('../models')
 const FormData = require('form-data')
 const fetch = require('node-fetch')
-const { imgurClientId } = require('../../ignore/key')
+const imgurClientId = process.env['IMGUR_TOKEN']
+// const { imgurClientId } = require('../../ignore/key')
 const errorMessage = require('../errorMessage.js')
 
 const PostDb = db.Post
