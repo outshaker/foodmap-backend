@@ -1,15 +1,16 @@
 const db = require('../models')
 const FormData = require('form-data')
 const fetch = require('node-fetch')
-const { imgurClientId } = require("../../ignore/key") ;
+const { imgurClientId } = require('../../ignore/key')
+const errorMessage = require('../errorMessage.js')
 
 const PostDb = db.Post
 const PictureDb = db.Picture
 
-const errMessage = {
-  ok: 0,
-  message: 'Fail to fetch.',
-}
+// const errMessage = {
+//   ok: 0,
+//   message: 'Fail to fetch.',
+// }
 const okMessage = {
   ok: 1,
   message: 'Success.',
@@ -63,15 +64,22 @@ module.exports = {
     if (req.session.userId !== req.params.user_id) {
       return res.json({
         ok: 0,
-        message: 'Unauthorized.'
+        message: 'Unauthorized.',
       })
     }
-    const checkedList = ['user_id', 'restaurant_id', 'title', 'content', 'visited_date', 'is_published']
+    const checkedList = [
+      'user_id',
+      'restaurant_id',
+      'title',
+      'content',
+      'visited_date',
+      'is_published',
+    ]
     if (!checkedList.every(key => Object.keys(req.body).includes(key))) {
-    return res.json({
-      ok: false,
-      message: 'Please input query parameter.',
-    })
+      return res.json({
+        ok: false,
+        message: 'Please input query parameter.',
+      })
     }
     const imageCount = req.files.length
     const imageResult = await uploadImage(req)
@@ -116,7 +124,7 @@ module.exports = {
     if (req.session.userId !== req.params.user_id) {
       return res.json({
         ok: 0,
-        message: 'Unauthorized.'
+        message: 'Unauthorized.',
       })
     }
     const imageCount = req.files.length
@@ -178,7 +186,7 @@ module.exports = {
     if (req.session.userId !== req.params.user_id) {
       return res.json({
         ok: 0,
-        message: 'Unauthorized.'
+        message: 'Unauthorized.',
       })
     }
     const postId = parseInt(req.params.post_id, 10)

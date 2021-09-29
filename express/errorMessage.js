@@ -3,13 +3,25 @@ const errorMessage = {
     ok: 0,
     message: 'invalid username or password',
   },
+  userIdNotFound: {
+    ok: 0,
+    message: 'invalid userId',
+  },
   needLogin: {
     ok: 0,
     message: 'Please login to continue',
   },
   unauthorized: {
     ok: 0,
-    message: "Sorry, you don't have permission to visit this site",
+    message: 'unauthorized',
+  },
+  fetchFail: {
+    ok: 0,
+    message: 'Fail to fetch',
+  },
+  missingParameter: {
+    ok: 0,
+    message: 'Please input query parameter',
   },
   general: {
     ok: 0,

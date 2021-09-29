@@ -24,21 +24,20 @@ const upload = new multer({
     files: 3,
     parts: 8,
   },
-});
-app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true
-}))
+})
+app.use(
+  cors({
+    origin: 'http://localhost:3000',
+    credentials: true,
+  })
+)
 app.use((req, res, next) => {
   res.locals.user = req.session.user || false
   res.locals.useId = req.session.useId || false
   next()
 })
 function isLogin(req, res, next) {
-  if (!req.session.user) {
-    res.json("you don't have cookie")
-    return
-  }
+  if (!req.session.user) return res.json("you don't have cookie")
   next()
 }
 
@@ -53,21 +52,34 @@ app.get('/cookie', (req, res) => {
 app.post('/register', userController.register)
 app.post('/login', userController.login)
 app.get('/logout', userController.logout)
-app.get("/api/user/:user_id", userController.getUserData);
-app.post("/api/user/:user_id", isLogin, upload.fields([
-  { name: 'avatar', maxCount: 1 },
-  { name: 'background', maxCount: 1 }
-]), userController.editUserData);
+app.patch('/admin/userId', isLogin, userController.banUser)
+app.get('/admin/userId', isLogin, userController.findUser)
+app.get('/admin', isLogin, userController.findAllUsers)
+app.get('/api/user/:user_id', userController.getUserData)
+app.post(
+  '/api/user/:user_id',
+  isLogin,
+  upload.fields([
+    { name: 'avatar', maxCount: 1 },
+    { name: 'background', maxCount: 1 },
+  ]),
+  userController.editUserData
+)
 app.get('/success', isLogin, (req, res) => {
   res.json(
     `yes you have cookie. you name is ${req.session.user} and you id is ${req.session.userId}`
   )
 })
-app.get("/api/post/user/:user_id", postController.getPosts);
-app.get("/api/post/:post_id", postController.getPost);
-app.post("/api/post", isLogin, upload.array("image"), postController.addPost);
-app.patch("/api/post/:post_id", isLogin, upload.array("image"), postController.editPost);
-app.delete("/api/post/:post_id", isLogin, postController.deletePost);
+app.get('/api/post/user/:user_id', postController.getPosts)
+app.get('/api/post/:post_id', postController.getPost)
+app.post('/api/post', isLogin, upload.array('image'), postController.addPost)
+app.patch(
+  '/api/post/:post_id',
+  isLogin,
+  upload.array('image'),
+  postController.editPost
+)
+app.delete('/api/post/:post_id', isLogin, postController.deletePost)
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`)
