@@ -1,3 +1,4 @@
+const errorMessage = require('../errorMessage.js')
 const db = require('../models')
 const FormData = require('form-data')
 const fetch = require('node-fetch')
@@ -23,46 +24,28 @@ const userController = {
         },
       })
     } catch (err) {
-      res.json({
-        ok: 0,
-        message: 'something goes wrong.',
-      })
+      res.json(errorMessage.userNotFound)
       console.log(err)
       return
     }
-    if (!user)
-      return res.json({
-        ok: 0,
-        message: 'wrong username or password',
-      })
+    if (!user) return res.json(res.json(errorMessage.userNotFound))
     bcrypt.compare(password, user.password, function(err, result) {
-      if (err)
-        return res.json({
-          ok: 0,
-          message: 'something goes wrong.',
-        })
+      if (err) return res.json(res.json(errorMessage.userNotFound))
       if (result) {
         req.session.user = username
         req.session.userId = user.id
         res.json({
           ok: 1,
-          message: 'Welcome',
+          message: 'success',
         })
         return
       }
-      res.json({
-        ok: 0,
-        message: 'incorrect username or password',
-      })
+      res.json(res.json(errorMessage.userNotFound))
     })
   },
   logout: async (req, res) => {
     await req.session.destroy(err => {
-      if (err)
-        return res.json({
-          ok: 0,
-          message: 'something goes wrong.',
-        })
+      if (err) return res.json(errorMessage.general)
     })
     res.json({
       ok: 1,
@@ -73,23 +56,14 @@ const userController = {
     const { username, email, password, checkedPassword } = req.body
     let result
     if (password !== checkedPassword) {
-      return res.json({
-        ok: 0,
-        message: '密碼不相同，請確認後再次提交',
-      })
+      return res.json(errorMessage.passwordNotSame)
     }
-    const re = /^[^ ]{6,64}$/
-    if (!re.test(password))
-      return res.json({
-        ok: 0,
-        message: 'password too short or contains blanks.',
-      })
+    const usernameRe = /^[\w!"#$%()*+,-\/;<=>?@[\]^`_{|}~]{4,32}$/g
+    if (!usernameRe.test(username)) return res.json(errorMessage.usernameError)
+    const passwordRe = /^[^ ]{6,64}$/g
+    if (!passwordRe.test(password)) return res.json(errorMessage.passwordError)
     bcrypt.hash(password, saltRounds, async function(err, hash) {
-      if (err)
-        return res.json({
-          ok: 0,
-          message: 'somethings goes wrong.',
-        })
+      if (err) return res.json(errorMessage.general)
       try {
         result = await User.create({
           username,
@@ -98,10 +72,7 @@ const userController = {
           nickname: username,
         })
       } catch (err) {
-        res.json({
-          ok: 0,
-          message: 'something goes wrong.',
-        })
+        res.json(errorMessage.duplicateUsernameOrEmail)
         return console.log(err)
       }
       if (result) {
