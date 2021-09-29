@@ -7,6 +7,7 @@ const errorMessage = require('../errorMessage.js')
 
 const PostDb = db.Post
 const PictureDb = db.Picture
+const User = db.User
 const okMessage = {
   ok: 1,
   message: 'Success.',
@@ -57,6 +58,20 @@ module.exports = {
     if (req.session.userId !== req.params.user_id) {
       return res.json(errorMessage.unauthorized)
     }
+    let result
+    try {
+      result = await User.findOne({
+        where: {
+          id: req.session.userId,
+        },
+      })
+    } catch (err) {
+      console.log(err)
+      return res.json(errorMessage.userIdNotFound)
+    }
+    if (!result) return res.json(errorMessage.userIdNotFound)
+    if (result.dataValues.user_level !== 1)
+      return res.json(errorMessage.unauthorized)
     const checkedList = [
       'user_id',
       'restaurant_id',
