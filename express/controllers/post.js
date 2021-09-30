@@ -19,6 +19,20 @@ const queryAttributes = [
 ]
 
 module.exports = {
+  getAllPosts: async (req, res) => {
+    // 取得所有食記
+    const checkedList = ['offset', 'limit']
+    if (!checkedList.every(key => Object.keys(req.query).includes(key))) {
+      return res.json(errorMessage.noParameter)
+    }
+    const queryData = {}
+    queryData.offset = parseInt(req.query.offset, 10)
+    queryData.limit = parseInt(req.query.limit, 10)
+    queryData.order = 'createdAt'
+    let result = await getUnpublishedPosts(false, queryData)
+    if (!result) return res.json(errorMessage.fetchFail)
+    return res.json(result)
+  },
   getPosts: async (req, res) => {
     // 取得單一使用者的複數食記
     const checkedList = ['offset', 'limit']
@@ -53,6 +67,7 @@ module.exports = {
   },
   addPost: async (req, res) => {
     console.log(req.body)
+    console.log(req.files)
     if (req.session.userId !== req.params.user_id) {
       return res.json(errorMessage.unauthorized)
     }
@@ -223,6 +238,9 @@ async function getUnpublishedPosts(unpublished = false, queryData) {
   let where = { user_id: userId, is_deleted: false, is_published: true }
   if (unpublished) {
     where = { user_id: userId, is_deleted: false }
+  }
+  if (!userId) {
+    where = { is_deleted: false, is_published: true }
   }
   let result = null
   let imageResult = null
