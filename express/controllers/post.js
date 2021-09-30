@@ -294,7 +294,14 @@ async function getUnpublishedPost(unpublished = false, postId) {
   try {
     result = await PostDb.findOne({
       where,
-      attributes: queryAttributes,
+      attributes: [
+        'id',
+        'user_id',
+        'title',
+        'content',
+        'visited_time',
+        'is_published',
+      ],
     })
   } catch (err) {
     console.log(err)
