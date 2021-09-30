@@ -25,7 +25,7 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       visited_time: {
-        type: Sequelize.DATE,
+        type: Sequelize.DATEONLY,
         allowNull: false
       },
       is_published: {

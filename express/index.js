@@ -43,11 +43,6 @@ function isLogin(req, res, next) {
   if (!req.session.user) return res.json("you don't have cookie")
   next()
 }
-// function isAdmin(req, res, next) {
-//   if (!req.session.userId) return res.json("you don't have id")
-//   userController.isAdmin()
-//   return res.json('ok')
-// }
 
 app.get('/', (req, res) => {
   res.json('Hello World!')
