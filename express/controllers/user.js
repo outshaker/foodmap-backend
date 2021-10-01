@@ -33,6 +33,11 @@ const userController = {
         res.json({
           ok: 1,
           message: 'success',
+          data: {
+            userId: user.id,
+            nickname: user.nickname,
+            userLevel: user.user_level
+          }
         })
         return
       }
@@ -75,6 +80,11 @@ const userController = {
         res.json({
           ok: 1,
           message: 'success',
+          data: {
+            userId: user.id,
+            nickname: user.nickname,
+            userLevel: user.user_level
+          }
         })
         req.session.user = username
         req.session.userId = result.dataValues.id

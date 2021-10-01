@@ -36,6 +36,10 @@ module.exports = {
   getPosts: async (req, res) => {
     // 取得單一使用者的複數食記
     const checkedList = ['offset', 'limit']
+    console.log(req.session.user)
+    console.log(req.session.userId)
+    console.log(req.params.user_id)
+    console.log(!req.session.user || req.session.userId != req.params.user_id)
     if (!checkedList.every(key => Object.keys(req.query).includes(key))) {
       return res.json(errorMessage.noParameter)
     }
@@ -44,7 +48,7 @@ module.exports = {
     queryData.offset = parseInt(req.query.offset, 10)
     queryData.limit = parseInt(req.query.limit, 10)
     queryData.order = 'createdAt'
-    if (!req.session.user || req.session.userId !== req.params.user_id) {
+    if (!req.session.user || req.session.userId != req.params.user_id) {
       let result = await getUnpublishedPosts(false, queryData)
       if (!result) return res.json(errorMessage.fetchFail)
       return res.json(result)
@@ -67,8 +71,9 @@ module.exports = {
   },
   addPost: async (req, res) => {
     console.log(req.body)
-    console.log(req.files)
-    if (req.session.userId !== req.params.user_id) {
+    console.log(req.session.userId)
+    console.log(req.body.user_id)
+    if (req.session.userId != req.body.user_id) {
       return res.json(errorMessage.unauthorized)
     }
     const checkedList = [
@@ -76,10 +81,11 @@ module.exports = {
       'restaurant_id',
       'title',
       'content',
-      'visited_date',
+      'visited_time',
       'is_published',
     ]
     if (!checkedList.every(key => Object.keys(req.body).includes(key))) {
+      console.log('Please input query parameter.')
       return res.json({
         ok: false,
         message: 'Please input query parameter.',
@@ -87,6 +93,7 @@ module.exports = {
     }
     const imageCount = req.files.length
     const imageResult = await uploadImage(req)
+    // const imageResult = ['fake image']
     if (!imageResult) return res.json(errorMessage.fetchFail)
     const {
       user_id,
