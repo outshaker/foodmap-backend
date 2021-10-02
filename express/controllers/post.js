@@ -4,6 +4,7 @@ const fetch = require('node-fetch')
 const imgurClientId = process.env['IMGUR_TOKEN']
 // const { imgurClientId } = require('../../ignore/key')
 const errorMessage = require('../errorMessage.js')
+const { query } = require('express')
 
 const PostDb = db.Post
 const PictureDb = db.Picture
@@ -18,6 +19,8 @@ const queryAttributes = [
   'content',
   'visited_time',
   'is_published',
+  'createdAt',
+  'views',
 ]
 
 module.exports = {
@@ -124,6 +127,22 @@ module.exports = {
       return res.json(errorMessage.fetchFail)
     }
     return res.json(okMessage)
+  },
+  getPostsByPlaceId: async (req, res) => {
+    // 取得PlaceId 的食記
+    const checkedList = ['offset', 'limit']
+    if (!checkedList.every(key => Object.keys(req.query).includes(key))) {
+      return res.json(errorMessage.noParameter)
+    }
+    const queryData = {}
+    queryData.restaurant_id = req.query.place_id
+    queryData.offset = parseInt(req.query.offset, 10)
+    queryData.limit = parseInt(req.query.limit, 10)
+    // queryData.order = 'createdAt'
+    queryData.order = req.query.order
+    let result = await getPostsByPlaceId(false, queryData)
+    if (!result) return res.json(errorMessage.fetchFail)
+    return res.json(result)
   },
   editPost: async (req, res) => {
     if (req.session.userId !== req.params.user_id) {
@@ -313,4 +332,29 @@ async function getUnpublishedPost(unpublished = false, postId) {
     images: imageArr,
   }
   return data
+}
+async function getPostsByPlaceId(unpublished = false, queryData) {
+  const { offset, limit, order, restaurant_id } = queryData
+  let result = null
+  try {
+    result = await PostDb.findAndCountAll({
+      where: {
+        restaurant_id,
+        is_deleted: false,
+        is_published: true,
+      },
+      attributes: queryAttributes,
+      order: [[order, 'DESC']],
+      offset,
+      limit,
+      include: {
+        model: PictureDb,
+        attributes: ['food_picture_url'],
+      },
+    })
+  } catch (err) {
+    console.log(err)
+    return false
+  }
+  return result
 }
