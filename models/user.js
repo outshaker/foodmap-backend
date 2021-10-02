@@ -16,7 +16,7 @@ module.exports = (sequelize, DataTypes) => {
       nickname: {
         type: DataTypes.STRING,
         validate: {
-          not: /[ !"#$%&'()*+,-.\/:;<=>?@[\]^`{|}~]/g,
+          not: /[ :.'&]/g,
         },
       },
       username: {

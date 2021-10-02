@@ -1,15 +1,13 @@
 const db = require('../models')
 const FormData = require('form-data')
 const fetch = require('node-fetch')
-const { imgurClientId } = require("../../ignore/key") ;
+const errorMessage = require('../errorMessage.js')
+require('dotenv').config()
+const imgurClientId = process.env.IMGUR_CLIENT_ID
 
 const PostDb = db.Post
 const PictureDb = db.Picture
-
-const errMessage = {
-  ok: 0,
-  message: 'Fail to fetch.',
-}
+const User = db.User
 const okMessage = {
   ok: 1,
   message: 'Success.',
@@ -23,14 +21,25 @@ const queryAttributes = [
 ]
 
 module.exports = {
+  getAllPosts: async (req, res) => {
+    // 取得所有食記
+    const checkedList = ['offset', 'limit']
+    if (!checkedList.every(key => Object.keys(req.query).includes(key))) {
+      return res.json(errorMessage.noParameter)
+    }
+    const queryData = {}
+    queryData.offset = parseInt(req.query.offset, 10)
+    queryData.limit = parseInt(req.query.limit, 10)
+    queryData.order = 'createdAt'
+    let result = await getUnpublishedPosts(false, queryData)
+    if (!result) return res.json(errorMessage.fetchFail)
+    return res.json(result)
+  },
   getPosts: async (req, res) => {
     // 取得單一使用者的複數食記
     const checkedList = ['offset', 'limit']
     if (!checkedList.every(key => Object.keys(req.query).includes(key))) {
-      return res.json({
-        ok: false,
-        message: 'Please input query parameter.',
-      })
+      return res.json(errorMessage.noParameter)
     }
     const queryData = {}
     queryData.userId = parseInt(req.params.user_id, 10)
@@ -39,11 +48,11 @@ module.exports = {
     queryData.order = 'createdAt'
     if (!req.session.user || req.session.userId !== req.params.user_id) {
       let result = await getUnpublishedPosts(false, queryData)
-      if (!result) return res.json(errMessage)
+      if (!result) return res.json(errorMessage.fetchFail)
       return res.json(result)
     }
     let result = await getUnpublishedPosts(true, queryData)
-    if (!result) return res.json(errMessage)
+    if (!result) return res.json(errorMessage.fetchFail)
     return res.json(result)
   },
   getPost: async (req, res) => {
@@ -51,31 +60,50 @@ module.exports = {
     const postId = parseInt(req.params.post_id, 10)
     if (!req.session.user || req.session.userId !== req.params.user_id) {
       let result = await getUnpublishedPost(false, postId)
-      if (!result) return res.json(errMessage)
+      if (!result) return res.json(errorMessage.fetchFail)
       return res.json(result)
     }
     let result = await getUnpublishedPost(true, postId)
-    if (!result) return res.json(errMessage)
+    if (!result) return res.json(errorMessage.fetchFail)
     return res.json(result)
   },
   addPost: async (req, res) => {
     console.log(req.body)
+    console.log(req.files)
     if (req.session.userId !== req.params.user_id) {
-      return res.json({
-        ok: 0,
-        message: 'Unauthorized.'
-      })
+      return res.json(errorMessage.unauthorized)
     }
-    const checkedList = ['user_id', 'restaurant_id', 'title', 'content', 'visited_date', 'is_published']
+    let result
+    try {
+      result = await User.findOne({
+        where: {
+          id: req.session.userId,
+        },
+      })
+    } catch (err) {
+      console.log(err)
+      return res.json(errorMessage.userIdNotFound)
+    }
+    if (!result) return res.json(errorMessage.userIdNotFound)
+    if (result.dataValues.user_level !== 1)
+      return res.json(errorMessage.unauthorized)
+    const checkedList = [
+      'user_id',
+      'restaurant_id',
+      'title',
+      'content',
+      'visited_date',
+      'is_published',
+    ]
     if (!checkedList.every(key => Object.keys(req.body).includes(key))) {
-    return res.json({
-      ok: false,
-      message: 'Please input query parameter.',
-    })
+      return res.json({
+        ok: false,
+        message: 'Please input query parameter.',
+      })
     }
     const imageCount = req.files.length
     const imageResult = await uploadImage(req)
-    if (!imageResult) return res.json(errMessage)
+    if (!imageResult) return res.json(errorMessage.fetchFail)
     const {
       user_id,
       restaurant_id,
@@ -96,7 +124,7 @@ module.exports = {
       })
     } catch (err) {
       console.log(err)
-      return res.json(errMessage)
+      return res.json(errorMessage.fetchFail)
     }
     try {
       for (let i = 0; i < imageCount; i++) {
@@ -108,22 +136,19 @@ module.exports = {
       }
     } catch (err) {
       console.log(err)
-      return res.json(errMessage)
+      return res.json(errorMessage.fetchFail)
     }
     return res.json(okMessage)
   },
   editPost: async (req, res) => {
     if (req.session.userId !== req.params.user_id) {
-      return res.json({
-        ok: 0,
-        message: 'Unauthorized.'
-      })
+      return res.json(errorMessage.unauthorized)
     }
     const imageCount = req.files.length
     const postId = parseInt(req.params.post_id, 10)
     const imageResult = await uploadImage(req)
     console.log(imageResult)
-    if (!imageResult) return res.json(errMessage)
+    if (!imageResult) return res.json(errorMessage.fetchFail)
     const {
       restaurant_id,
       title,
@@ -147,7 +172,7 @@ module.exports = {
       )
     } catch (err) {
       console.log(err)
-      return res.json(errMessage)
+      return res.json(errorMessage.fetchFail)
     }
     console.log(editResult)
     try {
@@ -158,7 +183,7 @@ module.exports = {
       })
     } catch (err) {
       console.log(err)
-      return res.json(errMessage)
+      return res.json(errorMessage.fetchFail)
     }
     try {
       for (let i = 0; i < imageCount; i++) {
@@ -170,16 +195,13 @@ module.exports = {
       }
     } catch (err) {
       console.log(err)
-      return res.json(errMessage)
+      return res.json(errorMessage.fetchFail)
     }
     return res.json(okMessage)
   },
   deletePost: async (req, res) => {
     if (req.session.userId !== req.params.user_id) {
-      return res.json({
-        ok: 0,
-        message: 'Unauthorized.'
-      })
+      return res.json(errorMessage.unauthorized)
     }
     const postId = parseInt(req.params.post_id, 10)
     let result = null
@@ -194,7 +216,7 @@ module.exports = {
       )
     } catch (err) {
       console.log(err)
-      return res.json(errMessage)
+      return res.json(errorMessage.fetchFail)
     }
     console.log(result)
     return res.json(okMessage)
@@ -232,6 +254,9 @@ async function getUnpublishedPosts(unpublished = false, queryData) {
   let where = { user_id: userId, is_deleted: false, is_published: true }
   if (unpublished) {
     where = { user_id: userId, is_deleted: false }
+  }
+  if (!userId) {
+    where = { is_deleted: false, is_published: true }
   }
   let result = null
   let imageResult = null
@@ -285,7 +310,14 @@ async function getUnpublishedPost(unpublished = false, postId) {
   try {
     result = await PostDb.findOne({
       where,
-      attributes: queryAttributes,
+      attributes: [
+        'id',
+        'user_id',
+        'title',
+        'content',
+        'visited_time',
+        'is_published',
+      ],
     })
   } catch (err) {
     console.log(err)
