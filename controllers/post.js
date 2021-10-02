@@ -1,8 +1,8 @@
 const db = require('../models')
 const FormData = require('form-data')
 const fetch = require('node-fetch')
-const imgurClientId = process.env['IMGUR_TOKEN']
-// const { imgurClientId } = require('../../ignore/key')
+require('dotenv').config()
+const imgurClientId = process.env.IMGUR_CLIENT_ID
 const errorMessage = require('../errorMessage.js')
 
 const PostDb = db.Post

@@ -2,11 +2,10 @@ const errorMessage = require('../errorMessage.js')
 const db = require('../models')
 const FormData = require('form-data')
 const fetch = require('node-fetch')
-// const { imgurClientId } = require('../../ignore/key')
-const imgurClientId = process.env['IMGUR_TOKEN']
-const bcrypt = require('bcrypt')
-const { error } = require('console')
-const { nextTick } = require('process')
+const bcrypt = require('bcryptjs')
+require('dotenv').config()
+const imgurClientId = process.env.IMGUR_CLIENT_ID
+
 const saltRounds = 11
 const User = db.User
 
