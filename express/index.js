@@ -76,7 +76,6 @@ app.get('/api/post', postController.getAllPosts)
 app.get('/api/post/user/:user_id', postController.getPosts)
 app.get('/api/post/:post_id', postController.getPost)
 app.post('/api/post', isLogin, upload.array('images'), postController.addPost)
-// app.post('/api/post',upload.array('images'), postController.addPost)
 
 app.patch(
   '/api/post/:post_id',
@@ -85,7 +84,6 @@ app.patch(
   postController.editPost
 )
 app.delete('/api/post/:post_id', isLogin, postController.deletePost)
-// app.delete('/api/post/:post_id', postController.deletePost)
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`)
