@@ -1,3 +1,6 @@
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config()
+}
 const express = require('express')
 const session = require('express-session')
 const userController = require('./controllers/user')
@@ -5,9 +8,9 @@ const bodyParser = require('body-parser')
 const cors = require('cors')
 const postController = require('./controllers/post.js')
 const multer = require('multer')
-
 const app = express()
 const port = process.env.PORT || 5001
+
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(
@@ -52,9 +55,14 @@ app.get('/cookie', (req, res) => {
 app.post('/register', userController.register)
 app.post('/login', userController.login)
 app.get('/logout', userController.logout)
-app.patch('/admin/userId', isLogin, userController.banUser)
-app.get('/admin/userId', isLogin, userController.findUser)
-app.get('/admin', isLogin, userController.findAllUsers)
+app.patch('/admin/ban/:userId', userController.isAdmin, userController.banUser)
+app.patch(
+  '/admin/unban/:userId',
+  userController.isAdmin,
+  userController.unBanUser
+)
+app.get('/admin', userController.isAdmin, userController.findUser)
+// app.get('/admin', isLogin, userController.findAllUsers)
 app.get('/api/user/:user_id', userController.getUserData)
 app.post(
   '/api/user/:user_id',
@@ -67,7 +75,7 @@ app.post(
 )
 app.get('/success', isLogin, (req, res) => {
   res.json(
-    `yes you have cookie. you name is ${req.session.user} and you id is ${req.session.userId}`
+    `yes you have cookie. you name is ${req.session.user} and your id is ${req.session.userId}`
   )
 })
 

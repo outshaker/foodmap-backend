@@ -2,9 +2,11 @@ const errorMessage = require('../errorMessage.js')
 const db = require('../models')
 const FormData = require('form-data')
 const fetch = require('node-fetch')
-const { imgurClientId } = require('../../ignore/key')
+// const { imgurClientId } = require('../../ignore/key')
+const imgurClientId = process.env['IMGUR_TOKEN']
 const bcrypt = require('bcrypt')
 const { error } = require('console')
+const { nextTick } = require('process')
 const saltRounds = 11
 const User = db.User
 
@@ -23,7 +25,6 @@ const userController = {
       console.log(err)
       return
     }
-    console.log(user)
     if (!user) return res.json(errorMessage.userNotFound)
     bcrypt.compare(password, user.password, function(err, result) {
       if (err) return res.json(errorMessage.general)
@@ -50,7 +51,7 @@ const userController = {
     })
     res.json({
       ok: 1,
-      message: 'session destroyed',
+      message: 'session destroyed.',
     })
   },
   register: async (req, res) => {
@@ -93,40 +94,98 @@ const userController = {
     })
   },
   banUser: async (req, res) => {
-    const { userId } = req.body
-    const adminId = req.session.userId
+    if (!req.params.userId) return res.json(errorMessage.userIdNotFound)
+    const { userId } = req.params
     let result
     try {
-      result = await User.findOne({
-        where: {
-          id: adminId,
-          user_level: 2,
+      result = await User.update(
+        {
+          user_level: 0,
         },
-      })
-    } catch (err) {
-      console.log(err)
-      return res.json(errorMessage.unauthorized)
-    }
-    if (!result) return res.json(errorMessage.unauthorized)
-    let banResult
-    try {
-      banResult = await User.update({
-        user_level: 0,
-        where: {
-          id: userId,
-        },
-      })
+        {
+          where: {
+            id: userId,
+          },
+        }
+      )
     } catch (err) {
       console.log(err)
       return res.json(errorMessage.general)
     }
-    if (!banResult) return res.json(errorMessage.userIdNotFound)
+    if (!result) return res.json(errorMessage.userIdNotFound)
     res.json({
       ok: 1,
       message: 'success',
     })
   },
-  findAllUsers: async (req, res) => {
+  unBanUser: async (req, res) => {
+    if (!req.params.userId) return res.json(errorMessage.userIdNotFound)
+    const { userId } = req.params
+    let result
+    try {
+      result = await User.update(
+        {
+          user_level: 1,
+        },
+        {
+          where: {
+            id: userId,
+          },
+        }
+      )
+    } catch (err) {
+      console.log(err)
+      return res.json(errorMessage.general)
+    }
+    if (!result) return res.json(errorMessage.userIdNotFound)
+    res.json({
+      ok: 1,
+      message: 'success',
+    })
+  },
+  findUser: async (req, res) => {
+    if (!req.query.username) {
+      let allUser
+      try {
+        allUser = await User.findAll({
+          limit: 30,
+          attributes: ['id', 'username', 'nickname', 'user_level'],
+          order: [['id', 'ASC']],
+        })
+      } catch (err) {
+        console.log(err)
+        return res.json(errorMessage.general)
+      }
+      res.json({
+        ok: 1,
+        message: 'success',
+        data: allUser,
+      })
+      return
+    }
+    const { username } = req.query
+    let user
+    try {
+      user = await User.findOne({
+        where: {
+          username,
+        },
+        attributes: ['id', 'username', 'nickname', 'user_level'],
+      })
+    } catch (err) {
+      console.log(err)
+      return res.json(errorMessage.userNotFound)
+    }
+    if (!user) return res.json(errorMessage.userNotFound)
+    console.log(user)
+    res.json({
+      ok: 1,
+      message: 'success',
+      data: user,
+    })
+  },
+  isAdmin: async (req, res, next) => {
+    if (!req.session.userId) return res.json(errorMessage.needLogin)
     const adminId = req.session.userId
     let result
     try {
@@ -140,47 +199,9 @@ const userController = {
       res.json(errorMessage.userIdNotFound)
     }
     if (!result) return res.json(errorMessage.userIdNotFound)
-    let allUser
-    try {
-      allUser = await User.findAll({
-        limit: 30,
-        attributes: ['id', 'username', 'nickname', 'user_level'],
-        order: [['id', 'ASC']],
-      })
-    } catch (err) {
-      console.log(err)
-      return res.json(errorMessage.general)
-    }
-    res.json({
-      ok: 1,
-      message: 'success',
-      data: allUser,
-    })
-  },
-  findUser: async (req, res) => {
-    const { username } = req.body
-    let result
-    try {
-      result = User.findOne({
-        where: {
-          username,
-        },
-      })
-    } catch (err) {
-      console.log(err)
-      return res.json(errorMessage.userNotFound)
-    }
-    if (!result) return res.json(errorMessage.userNotFound)
-    console.log(result)
-    res.json({
-      ok: 1,
-      message: 'success',
-      data: {
-        username,
-        nickname: result.dataValues.nickname,
-        user_level: result.dataValues.user_level,
-      },
-    })
+    if (result.dataValues.user_level === 2) return next()
+
+    return res.json(errorMessage.unauthorized)
   },
   getUserData: async (req, res) => {
     // 取得使用者的個人資料
@@ -193,12 +214,11 @@ const userController = {
       })
     } catch (err) {
       console.log(err)
-      return res.json({
-        ok: 0,
-        message: 'Fail to get data.',
-      })
+      return res.json(errorMessage.userIdNotFound)
     }
     const data = {
+      ok: 1,
+      message: 'success',
       data: result,
     }
     return res.json(data)
