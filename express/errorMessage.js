@@ -41,7 +41,7 @@ const errorMessage = {
   },
   duplicateUsernameOrEmail: {
     ok: 0,
-    message: 'duplicate username or email.',
+    message: 'duplicate username or email or invalid email format',
   },
   noParameter: {
     ok: 0,

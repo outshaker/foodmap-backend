@@ -4,15 +4,14 @@ if (process.env.NODE_ENV !== 'production') {
 const express = require('express')
 const session = require('express-session')
 const userController = require('./controllers/user')
-const bodyParser = require('body-parser')
 const cors = require('cors')
 const postController = require('./controllers/post.js')
 const multer = require('multer')
 const app = express()
 const port = process.env.PORT || 5001
 
-app.use(bodyParser.json())
-app.use(bodyParser.urlencoded({ extended: false }))
+app.use(express.json())
+app.use(express.urlencoded({ extended: false }))
 app.use(
   session({
     secret: 'keyboard cat',
@@ -78,7 +77,6 @@ app.get('/success', isLogin, (req, res) => {
     `yes you have cookie. you name is ${req.session.user} and your id is ${req.session.userId}`
   )
 })
-
 app.get('/api/map', postController.getPostsByPlaceId)
 app.get('/api/post', postController.getAllPosts)
 app.get('/api/post/user/:user_id', postController.getPosts)

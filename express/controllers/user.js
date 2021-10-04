@@ -65,7 +65,10 @@ const userController = {
     const passwordRe = /^[^ ]{6,64}$/g
     if (!passwordRe.test(password)) return res.json(errorMessage.passwordError)
     bcrypt.hash(password, saltRounds, async function(err, hash) {
-      if (err) return res.json(errorMessage.general)
+      if (err) {
+        console.log(err)
+        return res.json(errorMessage.general)
+      }
       try {
         result = await User.create({
           username,
