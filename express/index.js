@@ -24,7 +24,7 @@ const upload = new multer({
   limits: {
     fileSize: 1054576, // bytes, equal to 1 MB
     files: 3,
-    parts: 8,
+    parts: 9,
   },
 })
 app.use(
@@ -78,13 +78,15 @@ app.get('/success', isLogin, (req, res) => {
   )
 })
 app.get('/api/map', postController.getPostsByPlaceId)
+app.get('/api/post', postController.getAllPosts)
 app.get('/api/post/user/:user_id', postController.getPosts)
 app.get('/api/post/:post_id', postController.getPost)
-app.post('/api/post', isLogin, upload.array('image'), postController.addPost)
+app.post('/api/post', isLogin, upload.array('images'), postController.addPost)
+
 app.patch(
   '/api/post/:post_id',
   isLogin,
-  upload.array('image'),
+  upload.array('images'),
   postController.editPost
 )
 app.delete('/api/post/:post_id', isLogin, postController.deletePost)

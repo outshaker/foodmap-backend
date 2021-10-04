@@ -33,7 +33,12 @@ const userController = {
         req.session.userId = user.id
         res.json({
           ok: 1,
-          message: 'success.',
+          message: 'success',
+          data: {
+            userId: user.id,
+            nickname: user.nickname,
+            userLevel: user.user_level
+          }
         })
         return
       }
@@ -75,13 +80,19 @@ const userController = {
         res.json(errorMessage.duplicateUsernameOrEmail)
         return console.log(err)
       }
+      console.log(result)
       if (result) {
         res.json({
           ok: 1,
           message: 'success',
+          data: {
+            userId: result.id,
+            nickname: result.nickname,
+            userLevel: result.user_level
+          }
         })
         req.session.user = username
-        req.session.userId = result.dataValues.id
+        req.session.userId = result.id
       }
     })
   },
@@ -218,7 +229,7 @@ const userController = {
   editUserData: async (req, res) => {
     console.log(req.files)
     if (!req.params.user_id) return res.json(errorMessage.missingParameter)
-    if (req.session.userId !== req.params.user_id)
+    if (req.session.userId != req.params.user_id)
       return res.json(errorMessage.unauthorized)
     const userId = req.params.user_id
     const { nickname } = req.body
