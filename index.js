@@ -9,12 +9,13 @@ const postController = require('./controllers/post.js')
 const multer = require('multer')
 const app = express()
 const port = process.env.PORT || 5001
+const sessionSecret = process.env.SESSION_SECRET || 'keyboard cat'
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 app.use(
   session({
-    secret: 'keyboard cat',
+    secret: sessionSecret,
     saveUninitialized: false,
     resave: false,
     expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
@@ -29,7 +30,7 @@ const upload = new multer({
 })
 app.use(
   cors({
-    origin: 'http://localhost:3000',
+    origin: '*',
     credentials: true,
   })
 )
