@@ -31,11 +31,15 @@ const userController = {
       if (!result) return res.json(errorMessage.userNotFound)
       req.session.user = username
       req.session.userId = user.id
-      res.cookie(
-        'getMe',
-        `{"userId":${user.id},"nickname":"${user.nickname}","userLevel":${user.user_level}}`,
-        { maxAge: 24 * 60 * 60 * 1000, encode: String }
-      )
+      const cookieData = JSON.stringify({
+        userId: user.id,
+        nickname: user.nickname,
+        userLevel: user.user_level,
+      })
+      res.cookie('getMe', cookieData, {
+        maxAge: 24 * 60 * 60 * 1000,
+        encode: String,
+      })
       res.json({
         ok: 1,
         message: 'success',
@@ -94,11 +98,15 @@ const userController = {
           userLevel: result.user_level,
         },
       })
-      res.cookie(
-        'getMe',
-        `{"userId":${user.id},"nickname":"${user.nickname}","userLevel":${user.user_level}}`,
-        { maxAge: 24 * 60 * 60 * 1000, encode: String }
-      )
+      const cookieData = JSON.stringify({
+        userId: user.id,
+        nickname: user.nickname,
+        userLevel: user.user_level,
+      })
+      res.cookie('getMe', cookieData, {
+        maxAge: 24 * 60 * 60 * 1000,
+        encode: String,
+      })
       req.session.user = username
       req.session.userId = result.id
     })
