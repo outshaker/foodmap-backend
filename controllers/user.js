@@ -27,24 +27,32 @@ const userController = {
     if (!user) return res.json(errorMessage.userNotFound)
     bcrypt.compare(password, user.password, function(err, result) {
       if (err) return res.json(errorMessage.general)
-      if (result) {
-        req.session.user = username
-        req.session.userId = user.id
-        res.json({
-          ok: 1,
-          message: 'success',
-          data: {
-            userId: user.id,
-            nickname: user.nickname,
-            userLevel: user.user_level
-          }
-        })
-        return
-      }
-      res.json(errorMessage.userNotFound)
+
+      if (!result) return res.json(errorMessage.userNotFound)
+      req.session.user = username
+      req.session.userId = user.id
+      res.cookie(
+        'getMe',
+        {
+          userId: user.id,
+          nickname: user.nickname,
+          userLevel: user.user_level,
+        },
+        { maxAge: 24 * 60 * 60 * 1000 }
+      )
+      res.json({
+        ok: 1,
+        message: 'success',
+        data: {
+          userId: user.id,
+          nickname: user.nickname,
+          userLevel: user.user_level,
+        },
+      })
     })
   },
   logout: async (req, res) => {
+    res.clearCookie('getMe')
     await req.session.destroy(err => {
       if (err) return res.json(errorMessage.general)
     })
@@ -80,19 +88,27 @@ const userController = {
         return console.log(err)
       }
       console.log(result)
-      if (result) {
-        res.json({
-          ok: 1,
-          message: 'success',
-          data: {
-            userId: result.id,
-            nickname: result.nickname,
-            userLevel: result.user_level
-          }
-        })
-        req.session.user = username
-        req.session.userId = result.id
-      }
+      if (!result) return res.json(errorMessage.general)
+      res.json({
+        ok: 1,
+        message: 'success',
+        data: {
+          userId: result.id,
+          nickname: result.nickname,
+          userLevel: result.user_level,
+        },
+      })
+      res.cookie(
+        'getMe',
+        {
+          userId: user.id,
+          nickname: user.nickname,
+          userLevel: user.user_level,
+        },
+        { maxAge: 24 * 60 * 60 * 1000 }
+      )
+      req.session.user = username
+      req.session.userId = result.id
     })
   },
   banUser: async (req, res) => {
@@ -201,7 +217,7 @@ const userController = {
       res.json(errorMessage.userIdNotFound)
     }
     if (!result) return res.json(errorMessage.userIdNotFound)
-    if (result.dataValues.user_level === 2) return next()
+    if (result.user_level === 2) return next()
 
     return res.json(errorMessage.unauthorized)
   },
