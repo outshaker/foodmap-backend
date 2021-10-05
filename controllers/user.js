@@ -33,12 +33,8 @@ const userController = {
       req.session.userId = user.id
       res.cookie(
         'getMe',
-        {
-          userId: user.id,
-          nickname: user.nickname,
-          userLevel: user.user_level,
-        },
-        { maxAge: 24 * 60 * 60 * 1000 }
+        `{"userId":${user.id},"nickname":"${user.nickname}","userLevel":${user.user_level}}`,
+        { maxAge: 24 * 60 * 60 * 1000, encode: String }
       )
       res.json({
         ok: 1,
@@ -100,12 +96,8 @@ const userController = {
       })
       res.cookie(
         'getMe',
-        {
-          userId: user.id,
-          nickname: user.nickname,
-          userLevel: user.user_level,
-        },
-        { maxAge: 24 * 60 * 60 * 1000 }
+        `{"userId":${user.id},"nickname":"${user.nickname}","userLevel":${user.user_level}}`,
+        { maxAge: 24 * 60 * 60 * 1000, encode: String }
       )
       req.session.user = username
       req.session.userId = result.id
