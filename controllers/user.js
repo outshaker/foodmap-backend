@@ -99,9 +99,9 @@ const userController = {
         },
       })
       const cookieData = JSON.stringify({
-        userId: user.id,
-        nickname: user.nickname,
-        userLevel: user.user_level,
+        userId: result.id,
+        nickname: result.nickname,
+        userLevel: result.user_level,
       })
       res.cookie('getMe', cookieData, {
         maxAge: 24 * 60 * 60 * 1000,
