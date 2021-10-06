@@ -29,7 +29,7 @@ module.exports = {
     // 取得所有食記
     const checkedList = ['offset', 'limit']
     if (!checkedList.every(key => Object.keys(req.query).includes(key))) {
-      return res.json(errorMessage.noParameter)
+      return res.json(errorMessage.missingParameter)
     }
     const queryData = {}
     queryData.offset = parseInt(req.query.offset, 10)
@@ -43,7 +43,7 @@ module.exports = {
     // 取得PlaceId 的食記
     const checkedList = ['offset', 'limit']
     if (!checkedList.every(key => Object.keys(req.query).includes(key))) {
-      return res.json(errorMessage.noParameter)
+      return res.json(errorMessage.missingParameter)
     }
     const queryData = {}
     queryData.offset = parseInt(req.query.offset, 10)
@@ -63,7 +63,7 @@ module.exports = {
     console.log(req.params.user_id)
     console.log(!req.session.user || req.session.userId != req.params.user_id)
     if (!checkedList.every(key => Object.keys(req.query).includes(key))) {
-      return res.json(errorMessage.noParameter)
+      return res.json(errorMessage.missingParameter)
     }
     const queryData = {}
     queryData.userId = parseInt(req.params.user_id, 10)
@@ -92,26 +92,14 @@ module.exports = {
     return res.json(result)
   },
   addPost: async (req, res) => {
-    console.log(req.body)
     console.log(req.session.userId)
     console.log(req.body.user_id)
+    console.log(req.files)
     if (req.session.userId != req.body.user_id) {
       return res.json(errorMessage.unauthorized)
     }
-    let result
-    try {
-      result = await User.findOne({
-        where: {
-          id: req.session.userId,
-        },
-      })
-    } catch (err) {
-      console.log(err)
-      return res.json(errorMessage.userIdNotFound)
-    }
-    if (!result) return res.json(errorMessage.userIdNotFound)
-    if (result.dataValues.user_level !== 1)
-      return res.json(errorMessage.unauthorized)
+    if (!req.files) return res.json(errorMessage.noPhotos)
+    if (req.files.length < 1) return res.json(errorMessage.noPhotos)
     const checkedList = [
       'user_id',
       'restaurant_id',
@@ -122,14 +110,10 @@ module.exports = {
     ]
     if (!checkedList.every(key => Object.keys(req.body).includes(key))) {
       console.log('Please input query parameter.')
-      return res.json({
-        ok: false,
-        message: 'Please input query parameter.',
-      })
+      return res.json(errorMessage.missingParameter)
     }
     const imageCount = req.files.length
     const imageResult = await uploadImage(req)
-    // const imageResult = ['fake image']
     if (!imageResult) return res.json(errorMessage.fetchFail)
     const {
       user_id,
@@ -151,6 +135,8 @@ module.exports = {
       })
     } catch (err) {
       console.log(err)
+      if (err.ValidationErrorItem)
+        return res.json(err.ValidationErrorItem.message)
       return res.json(errorMessage.fetchFail)
     }
     try {
@@ -171,13 +157,12 @@ module.exports = {
     // 取得PlaceId 的食記
     const checkedList = ['offset', 'limit']
     if (!checkedList.every(key => Object.keys(req.query).includes(key))) {
-      return res.json(errorMessage.noParameter)
+      return res.json(errorMessage.missingParameter)
     }
     const queryData = {}
     queryData.restaurant_id = req.query.place_id
     queryData.offset = parseInt(req.query.offset, 10)
     queryData.limit = parseInt(req.query.limit, 10)
-    // queryData.order = 'createdAt'
     queryData.order = req.query.order
     let result = await getPostsByPlaceId(false, queryData)
     if (!result) return res.json(errorMessage.fetchFail)
@@ -243,9 +228,6 @@ module.exports = {
     return res.json(okMessage)
   },
   deletePost: async (req, res) => {
-    // if (req.session.userId !== req.params.user_id) {
-    //   return res.json(errorMessage.unauthorized)
-    // }
     const postId = parseInt(req.params.post_id, 10)
     let result = null
     try {
@@ -254,15 +236,30 @@ module.exports = {
           is_deleted: true,
         },
         {
-          where: { id: postId },
+          where: { user_id: req.session.userId, id: postId },
         }
       )
     } catch (err) {
       console.log(err)
       return res.json(errorMessage.fetchFail)
     }
-    console.log(result)
+    if (!result) return res.json(errorMessage.unauthorized)
     return res.json(okMessage)
+  },
+  isBan: async (req, res, next) => {
+    const id = req.session.userId
+    console.log('isBan')
+    let result
+    try {
+      result = await User.findOne({ where: { id } })
+    } catch (err) {
+      console.log(err)
+      return res.json(errorMessage.general)
+    }
+    console.log(result)
+    if (!result) return res.json(errorMessage.userNotFound)
+    if (result.user_level === 0) return res.json(errorMessage.unauthorized)
+    next()
   },
 }
 

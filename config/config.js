@@ -21,6 +21,6 @@ module.exports = {
     "database": "ebdb",
     "host": process.env.RDS_HOSTNAME,
     "dialect": "mysql",
-    "port": process.env.RDS_PORT
+    "port": process.env.RDS_PORT,
   }
 }
