@@ -41,11 +41,11 @@ const errorMessage = {
   },
   duplicateUsernameOrEmail: {
     ok: 0,
-    message: 'duplicate username or email.',
+    message: 'duplicate username or email or invalid email format',
   },
-  noParameter: {
+  noPhotos: {
     ok: 0,
-    message: 'Please input query parameter.',
+    message: 'at least one photo',
   },
 }
 module.exports = errorMessage

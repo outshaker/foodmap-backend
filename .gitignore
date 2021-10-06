@@ -1,3 +1,5 @@
+# Dependency directories
+node_modules/
 jspm_packages/
 
 # TypeScript v1 declaration files
@@ -62,7 +64,10 @@ dist
 # TernJS port file
 .tern-port
 
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
+
+# MacOS Desktop Services Store
 .DS_Store
-node_modules
-config/
-ignore/

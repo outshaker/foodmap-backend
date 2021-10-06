@@ -2,9 +2,10 @@ const errorMessage = require('../errorMessage.js')
 const db = require('../models')
 const FormData = require('form-data')
 const fetch = require('node-fetch')
-const { imgurClientId } = require('../../ignore/key')
-const bcrypt = require('bcrypt')
-const { error } = require('console')
+const bcrypt = require('bcryptjs')
+require('dotenv').config()
+const imgurClientId = process.env.IMGUR_CLIENT_ID
+
 const saltRounds = 11
 const User = db.User
 
@@ -23,34 +24,41 @@ const userController = {
       console.log(err)
       return
     }
-    console.log(user)
     if (!user) return res.json(errorMessage.userNotFound)
     bcrypt.compare(password, user.password, function(err, result) {
       if (err) return res.json(errorMessage.general)
-      if (result) {
-        req.session.user = username
-        req.session.userId = user.id
-        res.json({
-          ok: 1,
-          message: 'success',
-          data: {
-            userId: user.id,
-            nickname: user.nickname,
-            userLevel: user.user_level
-          }
-        })
-        return
-      }
-      res.json(errorMessage.userNotFound)
+
+      if (!result) return res.json(errorMessage.userNotFound)
+      req.session.user = username
+      req.session.userId = user.id
+      const cookieData = JSON.stringify({
+        userId: user.id,
+        nickname: user.nickname,
+        userLevel: user.user_level,
+      })
+      res.cookie('getMe', cookieData, {
+        maxAge: 24 * 60 * 60 * 1000,
+        encode: String,
+      })
+      res.json({
+        ok: 1,
+        message: 'success',
+        data: {
+          userId: user.id,
+          nickname: user.nickname,
+          userLevel: user.user_level,
+        },
+      })
     })
   },
   logout: async (req, res) => {
+    res.clearCookie('getMe')
     await req.session.destroy(err => {
       if (err) return res.json(errorMessage.general)
     })
     res.json({
       ok: 1,
-      message: 'session destroyed',
+      message: 'session destroyed.',
     })
   },
   register: async (req, res) => {
@@ -64,7 +72,10 @@ const userController = {
     const passwordRe = /^[^ ]{6,64}$/g
     if (!passwordRe.test(password)) return res.json(errorMessage.passwordError)
     bcrypt.hash(password, saltRounds, async function(err, hash) {
-      if (err) return res.json(errorMessage.general)
+      if (err) {
+        console.log(err)
+        return res.json(errorMessage.general)
+      }
       try {
         result = await User.create({
           username,
@@ -76,56 +87,123 @@ const userController = {
         res.json(errorMessage.duplicateUsernameOrEmail)
         return console.log(err)
       }
-      if (result) {
-        res.json({
-          ok: 1,
-          message: 'success',
-          data: {
-            userId: user.id,
-            nickname: user.nickname,
-            userLevel: user.user_level
-          }
-        })
-        req.session.user = username
-        req.session.userId = result.dataValues.id
-      }
+      console.log(result)
+      if (!result) return res.json(errorMessage.general)
+      res.json({
+        ok: 1,
+        message: 'success',
+        data: {
+          userId: result.id,
+          nickname: result.nickname,
+          userLevel: result.user_level,
+        },
+      })
+      const cookieData = JSON.stringify({
+        userId: result.id,
+        nickname: result.nickname,
+        userLevel: result.user_level,
+      })
+      res.cookie('getMe', cookieData, {
+        maxAge: 24 * 60 * 60 * 1000,
+        encode: String,
+      })
+      req.session.user = username
+      req.session.userId = result.id
     })
   },
   banUser: async (req, res) => {
-    const { userId } = req.body
-    const adminId = req.session.userId
+    if (!req.params.userId) return res.json(errorMessage.userIdNotFound)
+    const { userId } = req.params
     let result
     try {
-      result = await User.findOne({
-        where: {
-          id: adminId,
-          user_level: 2,
+      result = await User.update(
+        {
+          user_level: 0,
         },
-      })
-    } catch (err) {
-      console.log(err)
-      return res.json(errorMessage.unauthorized)
-    }
-    if (!result) return res.json(errorMessage.unauthorized)
-    let banResult
-    try {
-      banResult = await User.update({
-        user_level: 0,
-        where: {
-          id: userId,
-        },
-      })
+        {
+          where: {
+            id: userId,
+          },
+        }
+      )
     } catch (err) {
       console.log(err)
       return res.json(errorMessage.general)
     }
-    if (!banResult) return res.json(errorMessage.userIdNotFound)
+    if (!result) return res.json(errorMessage.userIdNotFound)
     res.json({
       ok: 1,
       message: 'success',
     })
   },
-  findAllUsers: async (req, res) => {
+  unBanUser: async (req, res) => {
+    if (!req.params.userId) return res.json(errorMessage.userIdNotFound)
+    const { userId } = req.params
+    let result
+    try {
+      result = await User.update(
+        {
+          user_level: 1,
+        },
+        {
+          where: {
+            id: userId,
+          },
+        }
+      )
+    } catch (err) {
+      console.log(err)
+      return res.json(errorMessage.general)
+    }
+    if (!result) return res.json(errorMessage.userIdNotFound)
+    res.json({
+      ok: 1,
+      message: 'success',
+    })
+  },
+  findUser: async (req, res) => {
+    if (!req.query.username) {
+      let allUser
+      try {
+        allUser = await User.findAll({
+          limit: 30,
+          attributes: ['id', 'username', 'nickname', 'user_level'],
+          order: [['id', 'ASC']],
+        })
+      } catch (err) {
+        console.log(err)
+        return res.json(errorMessage.general)
+      }
+      res.json({
+        ok: 1,
+        message: 'success',
+        data: allUser,
+      })
+      return
+    }
+    const { username } = req.query
+    let user
+    try {
+      user = await User.findOne({
+        where: {
+          username,
+        },
+        attributes: ['id', 'username', 'nickname', 'user_level'],
+      })
+    } catch (err) {
+      console.log(err)
+      return res.json(errorMessage.userNotFound)
+    }
+    if (!user) return res.json(errorMessage.userNotFound)
+    console.log(user)
+    res.json({
+      ok: 1,
+      message: 'success',
+      data: user,
+    })
+  },
+  isAdmin: async (req, res, next) => {
+    if (!req.session.userId) return res.json(errorMessage.needLogin)
     const adminId = req.session.userId
     let result
     try {
@@ -139,47 +217,9 @@ const userController = {
       res.json(errorMessage.userIdNotFound)
     }
     if (!result) return res.json(errorMessage.userIdNotFound)
-    let allUser
-    try {
-      allUser = await User.findAll({
-        limit: 30,
-        attributes: ['id', 'username', 'nickname', 'user_level'],
-        order: [['id', 'ASC']],
-      })
-    } catch (err) {
-      console.log(err)
-      return res.json(errorMessage.general)
-    }
-    res.json({
-      ok: 1,
-      message: 'success',
-      data: allUser,
-    })
-  },
-  findUser: async (req, res) => {
-    const { username } = req.body
-    let result
-    try {
-      result = User.findOne({
-        where: {
-          username,
-        },
-      })
-    } catch (err) {
-      console.log(err)
-      return res.json(errorMessage.userNotFound)
-    }
-    if (!result) return res.json(errorMessage.userNotFound)
-    console.log(result)
-    res.json({
-      ok: 1,
-      message: 'success',
-      data: {
-        username,
-        nickname: result.dataValues.nickname,
-        user_level: result.dataValues.user_level,
-      },
-    })
+    if (result.user_level === 2) return next()
+
+    return res.json(errorMessage.unauthorized)
   },
   getUserData: async (req, res) => {
     // 取得使用者的個人資料
@@ -192,12 +232,11 @@ const userController = {
       })
     } catch (err) {
       console.log(err)
-      return res.json({
-        ok: 0,
-        message: 'Fail to get data.',
-      })
+      return res.json(errorMessage.userIdNotFound)
     }
     const data = {
+      ok: 1,
+      message: 'success',
       data: result,
     }
     return res.json(data)
@@ -205,7 +244,7 @@ const userController = {
   editUserData: async (req, res) => {
     console.log(req.files)
     if (!req.params.user_id) return res.json(errorMessage.missingParameter)
-    if (req.session.userId !== req.params.user_id)
+    if (req.session.userId != req.params.user_id)
       return res.json(errorMessage.unauthorized)
     const userId = req.params.user_id
     const { nickname } = req.body
