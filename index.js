@@ -20,6 +20,7 @@ app.use(
     resave: false,
     cookie: {
       maxAge: 24 * 60 * 60 * 1000,
+      httpOnly: true,
     },
   })
 )
@@ -49,11 +50,13 @@ function isLogin(req, res, next) {
 app.get('/', (req, res) => {
   res.json('Hello World!')
 })
+app.get('/get-me', isLogin, userController.getMe)
 app.get('/cookie', (req, res) => {
   req.session.user = 'rich'
   req.session.userId = '1'
   res.json('give you cookie')
 })
+
 app.post('/register', userController.register)
 app.post('/login', userController.login)
 app.get('/logout', userController.logout)
