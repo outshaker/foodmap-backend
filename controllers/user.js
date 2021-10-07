@@ -3,6 +3,7 @@ const db = require('../models')
 const FormData = require('form-data')
 const fetch = require('node-fetch')
 const bcrypt = require('bcryptjs')
+const { general } = require('../errorMessage.js')
 require('dotenv').config()
 const imgurClientId = process.env.IMGUR_CLIENT_ID
 
@@ -11,23 +12,17 @@ const User = db.User
 
 const userController = {
   getMe: async (req, res) => {
-    try {
-      const { userId, nickname, userLevel } = req.session
-      res.json({
-        ok: 1,
-        data: {
-          userId,
-          nickname,
-          userLevel,
-        },
-      })
-    } catch (err) {
-      console.log(err)
-      res.json({
-        ok: 0,
-        message: 'user not found',
-      })
-    }
+    const { userId, nickname, userLevel } = req.session
+    if (!userId || !nickname || !userLevel)
+      return res.json({ ok: 0, message: errorMessage.unauthorized })
+    res.json({
+      ok: 1,
+      data: {
+        userId,
+        nickname,
+        userLevel,
+      },
+    })
   },
   login: async (req, res) => {
     const { username, password } = req.body
