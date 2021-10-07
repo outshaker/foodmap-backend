@@ -44,10 +44,7 @@ app.use((req, res, next) => {
 })
 function isLogin(req, res, next) {
   if (!req.session.user)
-    return res.json({
-      ok: 0,
-      message: "you don't have cookie",
-    })
+    return res.json({ ok: 0, message: "you don't have cookie" })
   next()
 }
 
@@ -94,7 +91,7 @@ app.get('/api/post/:post_id', postController.getPost)
 app.post(
   '/api/post',
   isLogin,
-  // postController.isBan,
+  postController.isBan,
   upload.array('images'),
   postController.addPost
 )
