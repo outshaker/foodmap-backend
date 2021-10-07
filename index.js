@@ -43,7 +43,11 @@ app.use((req, res, next) => {
   next()
 })
 function isLogin(req, res, next) {
-  if (!req.session.user) return res.json("you don't have cookie")
+  if (!req.session.user)
+    return res.json({
+      ok: 0,
+      message: "you don't have cookie",
+    })
   next()
 }
 

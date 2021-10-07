@@ -11,23 +11,21 @@ const User = db.User
 
 const userController = {
   getMe: async (req, res) => {
-    try {
-      const { userId, nickname, userLevel } = req.session
-      res.json({
-        ok: 1,
-        data: {
-          userId,
-          nickname,
-          userLevel,
-        },
-      })
-    } catch (err) {
-      console.log(err)
-      res.json({
+    const { userId, nickname, userLevel } = req.session
+    if (!userId || !nickname || !userLevel) {
+      return res.json({
         ok: 0,
         message: 'user not found',
       })
     }
+    res.json({
+      ok: 1,
+      data: {
+        userId,
+        nickname,
+        userLevel,
+      },
+    })
   },
   login: async (req, res) => {
     const { username, password } = req.body
