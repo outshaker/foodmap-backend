@@ -18,7 +18,9 @@ app.use(
     secret: sessionSecret,
     saveUninitialized: false,
     resave: false,
-    expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    cookie: {
+      maxAge: 24 * 60 * 60 * 1000,
+    },
   })
 )
 const upload = new multer({
@@ -82,11 +84,18 @@ app.get('/api/map', postController.getPostsByPlaceId)
 app.get('/api/post', postController.getAllPosts)
 app.get('/api/post/user/:user_id', postController.getPosts)
 app.get('/api/post/:post_id', postController.getPost)
-app.post('/api/post', isLogin, upload.array('images'), postController.addPost)
+app.post(
+  '/api/post',
+  isLogin,
+  // postController.isBan,
+  upload.array('images'),
+  postController.addPost
+)
 
 app.patch(
   '/api/post/:post_id',
   isLogin,
+  postController.isBan,
   upload.array('images'),
   postController.editPost
 )
