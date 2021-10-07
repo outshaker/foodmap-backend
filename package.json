@@ -19,7 +19,7 @@
   },
   "homepage": "https://github.com/outshaker/foodmap-backend#readme",
   "engines": {
-    "node": "14.16.0"
+    "node": "14.16.x"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
