@@ -68,7 +68,6 @@ module.exports = {
     queryData.userId = parseInt(req.params.user_id, 10)
     queryData.offset = parseInt(req.query.offset, 10)
     queryData.limit = parseInt(req.query.limit, 10)
-    queryData.unpublished = req.query.unpublished
     queryData.order = req.query.order
     let result = ""
     if (!req.session.user || sessionId !== userId) {
