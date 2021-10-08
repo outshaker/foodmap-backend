@@ -245,10 +245,6 @@ module.exports = {
   },
   deletePost: async (req, res) => {
     const sessionId = parseInt(req.session.userId, 10)
-    const userId = parseInt(req.body.user_id, 10)
-    if (!req.session.userId || sessionId !== userId) {
-      return res.json(errorMessage.unauthorized)
-    }
     const postId = parseInt(req.params.post_id, 10)
     let result = null
     try {
@@ -257,7 +253,7 @@ module.exports = {
           is_deleted: true,
         },
         {
-          where: { user_id: req.session.userId, id: postId },
+          where: { user_id: sessionId, id: postId },
         }
       )
     } catch (err) {
