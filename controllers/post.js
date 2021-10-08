@@ -74,7 +74,13 @@ module.exports = {
       if (!result) return res.json(errorMessage.fetchFail)
       return res.json(result)
     }
-    let result = await getUnpublishedPosts(true, queryData)
+    let result = ""
+    if (req.query.unpublished === 'true') {
+      result = await getUnpublishedPosts(true, queryData)
+    }
+    if (req.query.unpublished === 'false') {
+      result = await getUnpublishedPosts(false, queryData)
+    }
     if (!result) return res.json(errorMessage.fetchFail)
     return res.json(result)
   },
@@ -309,6 +315,9 @@ async function getUnpublishedPosts(unpublished = false, queryData) {
   }
   if (!userId) {
     where = { is_deleted: false, is_published: true }
+  }
+  if (unpublished && userId) {
+    where = { user_id: userId, is_deleted: false, is_published: false }
   }
   let result = null
   let imageResult = null
