@@ -13,6 +13,9 @@ const sessionSecret = process.env.SESSION_SECRET || 'keyboard cat'
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
+app.use('/', express.static('public'))
+
+app.set('trust proxy', 1) // 反向代理需要設定這個，secure: true 才可以正常
 app.use(
   session({
     secret: sessionSecret,
@@ -21,6 +24,8 @@ app.use(
     cookie: {
       maxAge: 24 * 60 * 60 * 1000,
       httpOnly: true,
+      secure: true,
+      sameSite: 'none'
     },
   })
 )
@@ -48,9 +53,18 @@ function isLogin(req, res, next) {
   next()
 }
 
-app.get('/', (req, res) => {
-  res.json('Hello World!')
+app.get('/status', (req, res) => {
+  if (!req.session) {
+    res.status(401).end()
+  } else {
+    res.json({
+      sid: req.sessionID,
+      user: req.session.user,
+      useId: req.session.userId
+    })
+  }
 })
+
 app.get('/get-me', isLogin, userController.getMe)
 app.get('/cookie', (req, res) => {
   req.session.user = 'rich'
@@ -106,5 +120,5 @@ app.patch(
 app.delete('/api/post/:post_id', isLogin, postController.deletePost)
 
 app.listen(port, () => {
-  console.log(`Example app listening at http://localhost:${port}`)
+  console.log(`run server at http://localhost:${port}`)
 })
