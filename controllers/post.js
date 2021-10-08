@@ -68,13 +68,17 @@ module.exports = {
     queryData.userId = parseInt(req.params.user_id, 10)
     queryData.offset = parseInt(req.query.offset, 10)
     queryData.limit = parseInt(req.query.limit, 10)
+    queryData.unpublished = req.query.unpublished
     queryData.order = req.query.order
+    let result = ""
     if (!req.session.user || sessionId !== userId) {
-      let result = await getUnpublishedPosts(false, queryData)
+      result = await getUnpublishedPosts(false, queryData)
       if (!result) return res.json(errorMessage.fetchFail)
       return res.json(result)
     }
-    let result = ""
+    if (!req.query.unpublished) {
+      result = await getUnpublishedPosts(false, queryData)
+    }
     if (req.query.unpublished === 'true') {
       result = await getUnpublishedPosts(true, queryData)
     }
@@ -310,9 +314,6 @@ async function uploadImage(req) {
 async function getUnpublishedPosts(unpublished = false, queryData) {
   const { userId, offset, limit, order } = queryData
   let where = { user_id: userId, is_deleted: false, is_published: true }
-  if (unpublished) {
-    where = { user_id: userId, is_deleted: false }
-  }
   if (!userId) {
     where = { is_deleted: false, is_published: true }
   }
