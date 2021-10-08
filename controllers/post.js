@@ -58,9 +58,8 @@ module.exports = {
   getPosts: async (req, res) => {
     // 取得單一使用者的複數食記
     const checkedList = ['offset', 'limit', 'order']
-    console.log(req.session.user)
-    console.log(req.session.userId)
-    console.log(req.params.user_id)
+    const sessionId = parseInt(req.session.userId, 10)
+    const userId = parseInt(req.params.user_id, 10)
     console.log(!req.session.user || req.session.userId != req.params.user_id)
     if (!checkedList.every(key => Object.keys(req.query).includes(key))) {
       return res.json(errorMessage.missingParameter)
@@ -70,19 +69,30 @@ module.exports = {
     queryData.offset = parseInt(req.query.offset, 10)
     queryData.limit = parseInt(req.query.limit, 10)
     queryData.order = req.query.order
-    if (!req.session.user || req.session.userId != req.params.user_id) {
-      let result = await getUnpublishedPosts(false, queryData)
+    let result = ""
+    if (!req.session.user || sessionId !== userId) {
+      result = await getUnpublishedPosts(false, queryData)
       if (!result) return res.json(errorMessage.fetchFail)
       return res.json(result)
     }
-    let result = await getUnpublishedPosts(true, queryData)
+    if (!req.query.unpublished) {
+      result = await getUnpublishedPosts(false, queryData)
+    }
+    if (req.query.unpublished === 'true') {
+      result = await getUnpublishedPosts(true, queryData)
+    }
+    if (req.query.unpublished === 'false') {
+      result = await getUnpublishedPosts(false, queryData)
+    }
     if (!result) return res.json(errorMessage.fetchFail)
     return res.json(result)
   },
   getPost: async (req, res) => {
     // 取得單一使用者的單一食記
+    const sessionId = parseInt(req.session.userId, 10)
+    const userId = parseInt(req.query.user_id, 10)
     const postId = parseInt(req.params.post_id, 10)
-    if (!req.session.user || req.session.userId !== req.params.user_id) {
+    if (!req.session.user || sessionId !== userId) {
       let result = await getUnpublishedPost(false, postId)
       if (!result) return res.json(errorMessage.fetchFail)
       return res.json(result)
@@ -92,10 +102,14 @@ module.exports = {
     return res.json(result)
   },
   addPost: async (req, res) => {
-    console.log(req.session.userId)
-    console.log(req.body.user_id)
-    console.log(req.files)
-    if (req.session.userId != req.body.user_id) {
+    const sessionId = parseInt(req.session.userId, 10)
+    const userId = parseInt(req.body.user_id, 10)
+    console.log(!req.session.user)
+    console.log(sessionId !== userId)
+    console.log(sessionId)
+    console.log(userId)
+
+    if (!req.session.user || sessionId !== userId) {
       return res.json(errorMessage.unauthorized)
     }
     if (!req.files) return res.json(errorMessage.noPhotos)
@@ -169,7 +183,9 @@ module.exports = {
     return res.json(result)
   },
   editPost: async (req, res) => {
-    if (req.session.userId !== req.params.user_id) {
+    const sessionId = parseInt(req.session.userId, 10)
+    const userId = parseInt(req.body.user_id, 10)
+    if (!req.session.userId || sessionId !== userId) {
       return res.json(errorMessage.unauthorized)
     }
     const imageCount = req.files.length
@@ -228,6 +244,11 @@ module.exports = {
     return res.json(okMessage)
   },
   deletePost: async (req, res) => {
+    const sessionId = parseInt(req.session.userId, 10)
+    const userId = parseInt(req.body.user_id, 10)
+    if (!req.session.userId || sessionId !== userId) {
+      return res.json(errorMessage.unauthorized)
+    }
     const postId = parseInt(req.params.post_id, 10)
     let result = null
     try {
@@ -292,11 +313,11 @@ async function uploadImage(req) {
 async function getUnpublishedPosts(unpublished = false, queryData) {
   const { userId, offset, limit, order } = queryData
   let where = { user_id: userId, is_deleted: false, is_published: true }
-  if (unpublished) {
-    where = { user_id: userId, is_deleted: false }
-  }
   if (!userId) {
     where = { is_deleted: false, is_published: true }
+  }
+  if (unpublished && userId) {
+    where = { user_id: userId, is_deleted: false, is_published: false }
   }
   let result = null
   let imageResult = null

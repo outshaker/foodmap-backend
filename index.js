@@ -20,6 +20,7 @@ app.use(
     resave: false,
     cookie: {
       maxAge: 24 * 60 * 60 * 1000,
+      httpOnly: true,
     },
   })
 )
@@ -42,18 +43,21 @@ app.use((req, res, next) => {
   next()
 })
 function isLogin(req, res, next) {
-  if (!req.session.user) return res.json("you don't have cookie")
+  if (!req.session.user)
+    return res.json({ ok: 0, message: "you don't have cookie" })
   next()
 }
 
 app.get('/', (req, res) => {
   res.json('Hello World!')
 })
+app.get('/get-me', isLogin, userController.getMe)
 app.get('/cookie', (req, res) => {
   req.session.user = 'rich'
   req.session.userId = '1'
   res.json('give you cookie')
 })
+
 app.post('/register', userController.register)
 app.post('/login', userController.login)
 app.get('/logout', userController.logout)
@@ -87,7 +91,7 @@ app.get('/api/post/:post_id', postController.getPost)
 app.post(
   '/api/post',
   isLogin,
-  // postController.isBan,
+  postController.isBan,
   upload.array('images'),
   postController.addPost
 )
