@@ -243,9 +243,9 @@ const userController = {
   editUserData: async (req, res) => {
     console.log(req.files)
     if (!req.params.user_id) return res.json(errorMessage.missingParameter)
-    if (req.session.userId != req.params.user_id)
-      return res.json(errorMessage.unauthorized)
-    const userId = req.params.user_id
+    const userId = parseInt(req.params.user_id, 10)
+    const sessionId = parseInt(req.session.userId, 10)
+    if (sessionId !== userId) return res.json(errorMessage.unauthorized)
     const { nickname } = req.body
     console.log(nickname)
     let avatarResult = null
