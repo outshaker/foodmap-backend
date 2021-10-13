@@ -26,7 +26,7 @@ app.use(
 )
 const upload = new multer({
   limits: {
-    fileSize: 5272880, // bytes, equal to 1 MB
+    fileSize: 10545760, // bytes, equal to 1 MB
     files: 3,
     parts: 9,
   },
