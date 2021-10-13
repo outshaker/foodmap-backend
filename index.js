@@ -38,7 +38,10 @@ const upload = new multer({
 })
 app.use(
   cors({
-    origin: process.env.ALLOWED_ORIGIN,
+    origin: [
+      'http://localhost:5000',
+      'https://chachachater.github.io',
+    ],
     credentials: true,
   })
 )
