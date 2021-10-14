@@ -90,8 +90,8 @@ app.get('/api/post/user/:user_id', postController.getPosts)
 app.get('/api/post/:post_id', postController.getPost)
 app.post(
   '/api/post',
-  isLogin,
-  postController.isBan,
+  // isLogin,
+  // postController.isBan,
   upload.array('images'),
   postController.addPost
 )
