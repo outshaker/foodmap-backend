@@ -52,12 +52,6 @@ app.get('/', (req, res) => {
   res.json('Hello World!')
 })
 app.get('/get-me', isLogin, userController.getMe)
-app.get('/cookie', (req, res) => {
-  req.session.user = 'rich'
-  req.session.userId = '1'
-  res.json('give you cookie')
-})
-
 app.post('/register', userController.register)
 app.post('/login', userController.login)
 app.get('/logout', userController.logout)
@@ -68,7 +62,6 @@ app.patch(
   userController.unBanUser
 )
 app.get('/admin', userController.isAdmin, userController.findUser)
-// app.get('/admin', isLogin, userController.findAllUsers)
 app.get('/api/user/:user_id', userController.getUserData)
 app.post(
   '/api/user/:user_id',
@@ -95,7 +88,6 @@ app.post(
   upload.array('images'),
   postController.addPost
 )
-
 app.patch(
   '/api/post/:post_id',
   isLogin,
@@ -104,7 +96,6 @@ app.patch(
   postController.editPost
 )
 app.delete('/api/post/:post_id', isLogin, postController.deletePost)
-
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`)
 })

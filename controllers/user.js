@@ -93,7 +93,6 @@ const userController = {
         res.json(errorMessage.duplicateUsernameOrEmail)
         return console.log(err)
       }
-      console.log(result)
       if (!result) return res.json(errorMessage.general)
       req.session.user = username
       req.session.userId = result.id
@@ -194,7 +193,6 @@ const userController = {
       return res.json(errorMessage.userNotFound)
     }
     if (!user) return res.json(errorMessage.userNotFound)
-    console.log(user)
     res.json({
       ok: 1,
       message: 'success',
@@ -241,13 +239,11 @@ const userController = {
     return res.json(data)
   },
   editUserData: async (req, res) => {
-    console.log(req.files)
     if (!req.params.user_id) return res.json(errorMessage.missingParameter)
     const userId = parseInt(req.params.user_id, 10)
     const sessionId = parseInt(req.session.userId, 10)
     if (sessionId !== userId) return res.json(errorMessage.unauthorized)
     const { nickname } = req.body
-    console.log(nickname)
     let avatarResult = null
     let backgroundResult = null
     if (req.files.avatar) {
@@ -258,7 +254,6 @@ const userController = {
       backgroundResult = await uploadImage(req.files.background[0])
       if (!backgroundResult) return res.json(errorMessage.fetchFail)
     }
-    console.log(avatarResult, backgroundResult)
     let result = null
     try {
       result = await User.update(
@@ -281,7 +276,6 @@ const userController = {
       console.log(err)
       return res.json(errorMessage.fetchFail)
     }
-    console.log(result)
     return res.json({
       ok: 1,
       message: 'success',
@@ -292,7 +286,6 @@ const userController = {
 module.exports = userController
 
 async function uploadImage(file) {
-  console.log(file)
   const myHeaders = new fetch.Headers()
   myHeaders.append('Authorization', `Client-ID ${imgurClientId}`)
   const formData = new FormData()
