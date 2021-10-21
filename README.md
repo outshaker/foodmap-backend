@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="./img/logo.png" alt="logo"/>
-</p>
-
 # 吃貨地圖-後端
 
 ### 今晚想來點...?
