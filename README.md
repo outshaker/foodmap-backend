@@ -60,6 +60,27 @@
 
 * [資料庫結構](https://dbdiagram.io/d/6128a797825b5b0146e77e4d)
 
+## 本地端執行
+將專案 clone 下來後，`npm install` 安裝專案所需套件
+設定自己的 .env 檔案，並放在根目錄，裡面應該有：
+```
+NODE_ENV=development
+
+DB_USER=DB的使用者名稱
+DB_PASSWORD=DB的使用者密碼
+DB_NAME=DB的密碼
+DB_HOST=localhost
+DB_PORT=3306
+
+SESSION_SECRET=(自訂的密碼)
+ALLOWED_ORIGIN=(前端專案的位置) ex:'http://localhost:3000'
+GOOGLE_MAP_API_TOKEN=(Google Map API 金鑰)
+IMGUR_CLIENT_ID=(Imgur ID)
+
+```
+`npx sequelize-cli db:migrate`後，`node index.js` 就可以讓後端跑起來。
+
+
 ## 專案前端
 吃貨地圖前端，採用 React 開發。
 - [專案前端連結](https://github.com/chachachater/foodmap)
