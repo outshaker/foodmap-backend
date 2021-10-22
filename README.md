@@ -72,10 +72,10 @@ DB_NAME=DB的密碼
 DB_HOST=localhost
 DB_PORT=3306
 
-SESSION_SECRET=(自訂的密碼)
-ALLOWED_ORIGIN=(前端專案的位置) ex:'http://localhost:3000'
-GOOGLE_MAP_API_TOKEN=(Google Map API 金鑰)
-IMGUR_CLIENT_ID=(Imgur ID)
+SESSION_SECRET=自訂的密碼
+ALLOWED_ORIGIN=前端專案的位置 ex:'http://localhost:3000'
+GOOGLE_MAP_API_TOKEN=Google Map API 金鑰
+IMGUR_CLIENT_ID=Imgur ID
 
 ```
 `npx sequelize-cli db:migrate`後，`node index.js` 就可以讓後端跑起來。
