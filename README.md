@@ -61,7 +61,7 @@
 * [資料庫結構](https://dbdiagram.io/d/6128a797825b5b0146e77e4d)
 
 ## 本地端執行
-將專案 clone 下來後，`npm install` 安裝專案所需套件
+將專案 clone 下來後，`npm install` 安裝專案所需套件  
 設定自己的 .env 檔案，並放在根目錄，裡面應該有：
 ```
 NODE_ENV=development
