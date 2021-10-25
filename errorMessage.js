@@ -47,5 +47,13 @@ const errorMessage = {
     ok: 0,
     message: 'at least one photo',
   },
+  postNotFound: {
+    ok: 0,
+    message: 'post not found',
+  },
+  invalidDate: {
+    ok: 0,
+    message: 'Invalid date'
+  },
 }
 module.exports = errorMessage

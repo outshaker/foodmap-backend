@@ -20,19 +20,20 @@ app.use(
     resave: false,
     cookie: {
       maxAge: 24 * 60 * 60 * 1000,
+      httpOnly: true,
     },
   })
 )
 const upload = new multer({
   limits: {
-    fileSize: 1054576, // bytes, equal to 1 MB
+    fileSize: 10545760, // bytes, equal to 10 MB
     files: 3,
     parts: 9,
   },
 })
 app.use(
   cors({
-    origin: 'http://localhost:3000',
+    origin: process.env.ALLOWED_ORIGIN,
     credentials: true,
   })
 )
@@ -42,18 +43,15 @@ app.use((req, res, next) => {
   next()
 })
 function isLogin(req, res, next) {
-  if (!req.session.user) return res.json("you don't have cookie")
+  if (!req.session.user)
+    return res.json({ ok: 0, message: "you don't have cookie" })
   next()
 }
 
 app.get('/', (req, res) => {
   res.json('Hello World!')
 })
-app.get('/cookie', (req, res) => {
-  req.session.user = 'rich'
-  req.session.userId = '1'
-  res.json('give you cookie')
-})
+app.get('/get-me', isLogin, userController.getMe)
 app.post('/register', userController.register)
 app.post('/login', userController.login)
 app.get('/logout', userController.logout)
@@ -64,7 +62,6 @@ app.patch(
   userController.unBanUser
 )
 app.get('/admin', userController.isAdmin, userController.findUser)
-// app.get('/admin', isLogin, userController.findAllUsers)
 app.get('/api/user/:user_id', userController.getUserData)
 app.post(
   '/api/user/:user_id',
@@ -87,11 +84,10 @@ app.get('/api/post/:post_id', postController.getPost)
 app.post(
   '/api/post',
   isLogin,
-  // postController.isBan,
+  postController.isBan,
   upload.array('images'),
   postController.addPost
 )
-
 app.patch(
   '/api/post/:post_id',
   isLogin,
@@ -100,7 +96,6 @@ app.patch(
   postController.editPost
 )
 app.delete('/api/post/:post_id', isLogin, postController.deletePost)
-
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`)
 })

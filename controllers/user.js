@@ -3,6 +3,7 @@ const db = require('../models')
 const FormData = require('form-data')
 const fetch = require('node-fetch')
 const bcrypt = require('bcryptjs')
+const { general } = require('../errorMessage.js')
 require('dotenv').config()
 const imgurClientId = process.env.IMGUR_CLIENT_ID
 
@@ -10,6 +11,19 @@ const saltRounds = 11
 const User = db.User
 
 const userController = {
+  getMe: async (req, res) => {
+    const { userId, nickname, userLevel } = req.session
+    if (!userId || !nickname || !userLevel)
+      return res.json({ ok: 0, message: errorMessage.unauthorized })
+    res.json({
+      ok: 1,
+      data: {
+        userId,
+        nickname,
+        userLevel,
+      },
+    })
+  },
   login: async (req, res) => {
     const { username, password } = req.body
     let user
@@ -31,15 +45,8 @@ const userController = {
       if (!result) return res.json(errorMessage.userNotFound)
       req.session.user = username
       req.session.userId = user.id
-      const cookieData = JSON.stringify({
-        userId: user.id,
-        nickname: user.nickname,
-        userLevel: user.user_level,
-      })
-      res.cookie('getMe', cookieData, {
-        maxAge: 24 * 60 * 60 * 1000,
-        encode: String,
-      })
+      req.session.nickname = user.nickname
+      req.session.userLevel = user.user_level
       res.json({
         ok: 1,
         message: 'success',
@@ -52,7 +59,6 @@ const userController = {
     })
   },
   logout: async (req, res) => {
-    res.clearCookie('getMe')
     await req.session.destroy(err => {
       if (err) return res.json(errorMessage.general)
     })
@@ -87,8 +93,11 @@ const userController = {
         res.json(errorMessage.duplicateUsernameOrEmail)
         return console.log(err)
       }
-      console.log(result)
       if (!result) return res.json(errorMessage.general)
+      req.session.user = username
+      req.session.userId = result.id
+      req.session.nickname = result.nickname
+      req.session.userLevel = result.user_level
       res.json({
         ok: 1,
         message: 'success',
@@ -98,17 +107,6 @@ const userController = {
           userLevel: result.user_level,
         },
       })
-      const cookieData = JSON.stringify({
-        userId: result.id,
-        nickname: result.nickname,
-        userLevel: result.user_level,
-      })
-      res.cookie('getMe', cookieData, {
-        maxAge: 24 * 60 * 60 * 1000,
-        encode: String,
-      })
-      req.session.user = username
-      req.session.userId = result.id
     })
   },
   banUser: async (req, res) => {
@@ -195,7 +193,6 @@ const userController = {
       return res.json(errorMessage.userNotFound)
     }
     if (!user) return res.json(errorMessage.userNotFound)
-    console.log(user)
     res.json({
       ok: 1,
       message: 'success',
@@ -242,13 +239,11 @@ const userController = {
     return res.json(data)
   },
   editUserData: async (req, res) => {
-    console.log(req.files)
     if (!req.params.user_id) return res.json(errorMessage.missingParameter)
-    if (req.session.userId != req.params.user_id)
-      return res.json(errorMessage.unauthorized)
-    const userId = req.params.user_id
+    const userId = parseInt(req.params.user_id, 10)
+    const sessionId = parseInt(req.session.userId, 10)
+    if (sessionId !== userId) return res.json(errorMessage.unauthorized)
     const { nickname } = req.body
-    console.log(nickname)
     let avatarResult = null
     let backgroundResult = null
     if (req.files.avatar) {
@@ -259,7 +254,6 @@ const userController = {
       backgroundResult = await uploadImage(req.files.background[0])
       if (!backgroundResult) return res.json(errorMessage.fetchFail)
     }
-    console.log(avatarResult, backgroundResult)
     let result = null
     try {
       result = await User.update(
@@ -282,7 +276,6 @@ const userController = {
       console.log(err)
       return res.json(errorMessage.fetchFail)
     }
-    console.log(result)
     return res.json({
       ok: 1,
       message: 'success',
@@ -293,7 +286,6 @@ const userController = {
 module.exports = userController
 
 async function uploadImage(file) {
-  console.log(file)
   const myHeaders = new fetch.Headers()
   myHeaders.append('Authorization', `Client-ID ${imgurClientId}`)
   const formData = new FormData()
