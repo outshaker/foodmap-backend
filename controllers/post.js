@@ -364,17 +364,10 @@ async function getPostsByPlaceId(unpublished = false, queryData) {
   return result
 }
 
+// 驗證食記的日期是正確的 (符合 yyyy-MM-dd 日期格式, 不超過當天時間)
 function isValidDate(dateString) {
   if (!/^\d{4}-\d{1,2}-\d{1,2}$/.test(dateString)) return false;
-  const dateParts = dateString.split("-");
-  const day = parseInt(dateParts[2], 10);
-  const month = parseInt(dateParts[1], 10);
-  const year = parseInt(dateParts[0], 10);
-  if (year < 2000 || month == 0 || month > 12) return false;
-  // 對 2月 28 或 29 天做檢查
-  const monthLength = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-  if (year % 400 == 0 || (year % 100 != 0 && year % 4 == 0)) monthLength[1] = 29;
-  if (!(day > 0 && day <= monthLength[month - 1])) return false;
-  // 年/月/日不能超過今天
-  return new Date(dateString) <= new Date(new Date());
+  const date = new Date(dateString + 'T00:00:00+0800')
+  if (!date) return false
+  return date <= new Date()
 }
